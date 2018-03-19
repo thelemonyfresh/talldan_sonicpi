@@ -2576,6 +2576,8 @@ end
   end
 
 #+END_SRC
+* <2018-02-26 Mon> slow jam with melody
+*
 * patterns
 #+BEGIN_SRC ruby
   four_on_the_floor = ring 1, 1, 1, 1
@@ -3430,7 +3432,7 @@ end
   end
 
 #+END_SRC
-** alesis: watqerfall kit
+** alesis: waterfall kit
 #+BEGIN_SRC ruby
   ### Alesis: waterfall kit
 
