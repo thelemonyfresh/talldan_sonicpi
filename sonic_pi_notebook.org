@@ -2578,6 +2578,79 @@ end
 #+END_SRC
 * <2018-02-26 Mon> slow jam with melody
 *
+* <2018-03-20 Tue> prophet jam
+#+BEGIN_SRC ruby
+  use_bpm 105
+
+  live_loop :tester do
+    stop
+    use_synth :prophet
+    s = play :E, note_slide: 8,
+             amp: 0.5, sustain: 32, amp_slide: 4,
+             cutoff: 50, cutoff_slide: 32,
+             res: 0.75, res_slide: 8
+    control s, amp: 0.7
+    control s, cutoff: 80
+    control s, note: :C
+    control s, res: 0.05
+    sleep 32
+  end
+
+  live_loop :ticker do
+    stop
+    sample :bd_tek, amp: 0.1
+    sample :bd_tek, amp: 0.2, rpitch: -5
+    sample :bd_tek, amp: 0.2, rpitch: 5
+    sample :bd_tek, amp: 0.2, rpitch: -7
+    sleep 1
+  end
+
+#+END_SRC
+* <2018-03-20 Tue> prohet jam part deux
+
+* <2018-04-04 Wed> attempt at ableton sync
+
+#+BEGIN_SRC ruby
+  # Standard Incantations:
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  #run_file "#{base_dir}xtouch_knobs.rb"
+
+  use_bpm 120
+
+  set(:loop1_vol, nil)
+  set(:knob_1_state, get(:loop1_vol))
+  set(:loop1_vol, 0)
+
+  live_loop :knob1 do
+    use_real_time
+    note, val = sync "/midi/x-touch_mini/1/11/note_on"
+    if (note == 8)
+      cue :loop1
+      set(:loop1_vol,0)
+    elsif (note == 16)
+      set(:loop1_vol, nil)
+    end
+  end
+
+  ####
+
+  live_loop :loop_uno do
+    use_real_time
+    new_vol = get(:loop1_vol)
+    sync :loop1 unless new_vol
+    puts new_vol
+    #with_fx :level, amp: new_vol do |node|
+    #set(:knob1amp, node)
+    news
+    #end
+  end
+
+  define :news do
+    sample :elec_blup
+    sleep 1
+  end
+
+#+END_SRC
 * patterns
 #+BEGIN_SRC ruby
   four_on_the_floor = ring 1, 1, 1, 1
