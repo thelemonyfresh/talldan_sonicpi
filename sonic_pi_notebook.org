@@ -1,2656 +1,3 @@
-* <2017-05-21 Sun>
-#+BEGIN_SRC ruby
-  # CHORD PROGRESSION
-  # e.g.
-  play_chord chord_progression([3,4,5,3], :C, :major).tick
-
-  define :chord_progression do |degrees, key, type|
-    progression = []
-    degrees.each do |deg|
-      progression << (chord_degree deg, key, type)
-    end
-    return progression.ring
-  end
-
-
-
-  # SAMPLE TIMED v1: play array of samples with timing, negative means rest
-  # e.g.
-  live_loop :beat do
-    sample_timed [
-      [[:bd_haus], knit(1,16)],
-      [[:drum_snare_soft], [-1,1]*8],
-      [[:drum_cymbal_closed], (knit(-1,15) + [-0.5,0.5])]
-    ]
-  end
-
-  define :sample_timed do |samps|
-    # determine increment
-    inc = 0.005
-
-    # find the maximum length
-    max = 0
-    samps.each do |samp|
-      sum = samp[1].inject(0){ |sum,x| sum + x.abs}
-      max = sum if sum > max
-    end
-
-    (max/inc).times do |n|
-      cur_time = (n * inc).round(3)
-
-      # for each sample determine whether or not to play at this time
-      samps.each do |samp|
-        sum_of_times = 0
-        samp[1].length.times do |i|
-          cum_time = samp[1].take(i).inject(0){ |sum,x| sum + x.abs }
-          if (cum_time == cur_time) && samp[1][i] > 0
-            sample samp[0][0], samp[0][1]
-            break
-          end
-        end
-      end
-
-      # sleep increment time
-      sleep inc
-    end
-  end
-
-
-
-  # GENERATE LISTS
-  knit(1,5) # (generate list of five ones)
-
-  # NEW SAMPLE TIMED (better timekeeping?)
-  define :sample_timed do |samps|
-    puts samps
-    # determine increment
-    inc = 0.125/2
-
-    # find the maximum length
-    max = 0
-    samps.each do |samp|
-      sum = samp[1].inject(0){ |sum,x| sum + x.abs}
-      max = sum if sum > max
-    end
-
-    puts max
-    puts inc
-    puts max/inc
-
-    steps = []
-    (max/inc).times do |n|
-      cur_time = (n * inc).round(3)
-
-      # for each sample determine whether or not to play at this time
-      play_at_this_time = []
-      samps.each do |samp|
-        samp[1].length.times do |i|
-          cum_time = samp[1].take(i).inject(0){ |sum,x| sum + x.abs }
-          if (cum_time == cur_time) && samp[1][i] > 0
-            play_at_this_time << [samp[0][0], samp[0][1]]
-          end
-        end
-      end
-      steps << play_at_this_time
-    end
-
-    # sleep increment time
-    steps.each do |step|
-      step.each do |samp|
-        puts step
-        sample samp[0], samp[1]
-      end
-      sleep inc
-    end
-  end
-
-
-  # wobbly bass: https://gist.github.com/xavriley/92dbba5de1c78177c33d
-#+END_SRC
-
-* <2017-05-22 Mon>
-#+BEGIN_SRC ruby
-four_on_the_floor = ring 1, 1, 1, 1
-downbeats = four_on_the_floor
-dondoko = ring 1, 0.5, 0.5
-
-bd_i_like = [:bd_haus]
-synth_i_like = [
-  :prophet,
-  :dpulse,
-]
-
-# some progressions I like
-# 2127
-# 3212
-#+END_SRC
-* <2017-05-29 Mon>
-Le Poisson Melody
-#+BEGIN_SRC ruby
-  use_bpm 80
-
-  live_loop :poisson_melody do
-    use_synth :beep
-    chords = [:g, :fs, :e, :Fs,
-              :g, :fs,
-              :d, :fs, :a, :d].each{|c| chord :g, :major}
-    play_pattern chords
-  end
-#+END_SRC
-
-https://gist.github.com/darinwilson/a3e5909db339838a67fe
-drum machine
-* <2017-06-15 Thu>
-#+BEGIN_SRC ruby
-  use_bpm 115
-
-  live_loop :bd do
-    8.times do |n|
-      sample :bd_haus
-      sleep 0.5
-      sample :drum_cymbal_pedal
-      sleep 0.5
-    end
-  end
-
-  live_loop :basslines do
-    synth = synth_names.choose
-    use_synth synth
-    puts synth
-    sync_bpm :bd
-    play_pattern_timed chord(:e2, :minor).take(2),
-                       [4,1],
-
-                       puts synth
-  end
-
-
-  # good synths for bass: square, blade?, pretty_bell, tri, dtri, sine, saw, dullbell, chip bass, beep, hollow,
-#+END_SRC
-* <2017-06-26 Mon>
-#+BEGIN_SRC ruby
-  use_bpm 89
-
-  define :hh do
-    sample :drum_cymbal_closed,
-           attack: 0.025,
-           hpf: 110,
-           hpf_attack: 0.05,
-           rate: 1.25
-  end
-
-  live_loop :hihat do
-    7.times do
-      hh
-      sleep 1
-    end
-    sleep 0.5
-    2.times do
-      hh
-      sleep 0.25
-    end
-  end
-  define :bd do
-    sample :bd_haus,
-           rate: 0.8
-  end
-
-  live_loop :bassdrum do
-    sync_bpm :hihat
-    4.times do
-      bd
-      sleep 2
-    end
-  end
-
-  define :sn do
-    sample :elec_snare,
-           rate: 1.5,
-           lpf: 100
-  end
-
-  live_loop :snaredrum do
-    sync_bpm :hihat
-    sleep 1
-    3.times do
-      sn
-      sleep 2
-    end
-  end
-
-  live_loop :basslines do
-    sync_bpm :hihat
-    use_synth :square
-    play_pattern_timed ...
-  end
-
-#+END_SRC
-* <2017-07-03 Mon>
-#+BEGIN_SRC ruby
-  use_bpm 92
-
-  live_loop :ambi do
-    still_waters = :ambi_dark_woosh
-    on_the_lake = 0.4
-    sample still_waters, beat_stretch: 8
-    sleep 8
-  end
-
-  live_loop :beats do
-    sync_bpm :ambi
-    7.times do
-      sample :drum_cymbal_closed, decay: 0.5
-      sleep 1
-    end
-    2.times do
-      sample:drum_cymbal_closed, decay: 0.2
-      sleep 0.25
-    end
-    sleep 0.25
-    sample :drum_cowbell, lpf: 80
-    sleep 0.25
-  end
-
-  live_loop :snares do
-    sync_bpm :ambi
-    2.times do
-      sleep 2
-      sample :drum_snare_soft
-    end
-  end
-
-#+END_SRC
-* <2017-09-03 Sun>
-#+BEGIN_SRC ruby
-  defonce :name_of_fxn
-  # means don't re-eval every time
-  end
-
-  use_bpm 110
-
-  live_loop :slipn do
-    chord(:E2, :minor7).each do |n|
-      play n, sustain: (halves 3,4).tick
-      sleep 4
-    end
-  end
-
-  live_loop :around do
-    sync_bpm :slipn
-    use_synth :pretty_bell
-    with_fx :reverb, reps: 12 do
-      play scale(:E6, :minor).choose, attack: 0.2, decay: 0.6, pan: rdist(1,0), amp: range(0.1, 0.8, 0.5).tick
-      sleep 1
-    end
-  end
-
-  live_loop :goddamn do
-    sync_bpm :slipn
-    3.times do
-      sample :drum_cymbal_soft, decay: 0.125
-      sleep 0.3333
-    end
-    sample :drum_cymbal_open
-    sleep 3
-    3.times do
-      4.times do
-        sample :bd_klub
-        sleep 0.5
-        sample :drum_cymbal_pedal
-        sleep 0.5
-      end
-    end
-  end
-
-
-#+END_SRC
-* <2017-09-08 Fri> ABC song
-#+BEGIN_SRC
-use_bpm 80
-
-# AcBAc
-define :a do |n|
-  if n == 0
-    2.times do
-      sample :bd_fat
-      sleep 0.25
-    end
-  else
-    acbac(n-1)
-  end
-end
-
-define :b do |n|
-  if n == 0
-    2.times do
-      sample :drum_snare_soft
-      sleep 0.25
-    end
-  else
-    bcabc(n-1)
-  end
-end
-
-define :c do |n|
-  if n == 0
-    sample :elec_tick
-    sleep 0.25
-  else
-    n.times do
-      2.times do
-        sample :elec_tick
-        sleep 0.25
-      end
-    end
-    n.times do
-      2.times do
-        sleep 0.25
-      end
-    end
-  end
-end
-
-define :acbac do |n|
-  sample :ambi_choir
-  a(n)
-  c(n)
-  b(n)
-  a(n)
-  c(n)
-end
-
-define :bcabc do |n|
-  sample :ambi_whoosh
-  b(n)
-  c(n)
-  a(n)
-  b(n)
-  c(n)
-end
-
-live_loop :echoes do
-  acbac(2)
-end
-
-
-#+END_SRC
-* <2017-09-08 Fri>
-#+BEGIN_SRC ruby
-use_bpm 95
-
-don_doko = ring(1, 0.5, 0.5)
-siamese = ring(3, 5, 4, 1, 2, 3)
-schoolboys = ring(2, 1, 2, 7)
-
-live_loop :beats do
-  16.times do
-    sample :drum_cymbal_pedal, attack_level: 0.8
-    sleep 1
-  end
-end
-
-live_loop :mel do
-  sync_bpm :beats
-  use_synth :sine
-  3.times do
-    puts schoolboys.tick
-    puts siamese.tick
-    sleep 1
-  end
-end
-
-live_loop :basslines do
-  sync_bpm :beats
-  use_synth :sine
-  scale(:C2, :major).each do |n|
-    play n
-    sleep ring(1,0.5).tick
-  end
-  sleep 4
-  play :C2
-end
-
-
-#+END_SRC
-* <2017-09-09 Sat>
-nice plucky bassline here!
-#+BEGIN_SRC ruby
-
-use_bpm 90
-
-live_loop :bassline do
-  use_synth :pluck
-  with_fx :distortion, mix: 0.1 do
-    knit(0,8,3,8,1,8,7,8).each do |n|
-      play scale(:C2, :major)[n],
-        pan: range(-1,1,0.1).choose,
-        attack: 0.1,
-        amp: 0.7
-      sleep 0.25
-    end
-  end
-end
-
-live_loop :beatwise do
-  sync_bpm :bassline
-  3.times do
-    sample :bd_fat
-    sleep 1
-    sample :drum_snare_soft
-    sleep 1.5
-    sample :bd_fat
-    sleep 0.5
-    sample :drum_snare_soft
-    sleep 1
-  end
-  sleep 3
-  sample :drum_cymbal_open, amp: 0.5, decay: 1
-end
-
-
-#+END_SRC
-* COMMENT <2017-10-03 Tue> Habanera
-#+BEGIN_SRC ruby
-  live_loop :habanera do
-    use_synth :fm
-    use_transpose -12
-    notes = ring(:d, :r, :r, :a, :f5, :r, :a, :r)
-    #cue :mel
-    notes.each do |n|
-      play n
-      sleep 0.25
-    end
-  end
-
-  live_loop :drums do
-    8.times do |n|
-      sleep 0.25
-      soft_hat if n.even?
-      sleep 0.25
-      soft_hat
-      sleep 0.5
-    end
-  end
-
-  live_loop :melody do
-    sync :mel
-    use_synth :piano
-    sleep 0.75
-    [75, 74, :r, 73, :r, 72, :r, :r].each do |n|
-      play n
-      sleep 0.25
-    end
-  end
-
-  define :soft_hat do
-    sample :drum_cymbal_pedal, attack: 0.05, decay: 0.5
-  end
-
-  define :pretty_melody do |len, scl|
-    scl = note(scl)
-    notes = []
-    len.times do |n|
-      if rrand(0,1) > 0.25
-        notes << :r
-      else
-
-      end
-    end
-  end
-
-  # if the last two notes were in the bottom half of the scale, transpose down 50% of time
-  # if in the top half, transpose up 50% of time
-  # use note outside of scale 15% of time
-
-#+END_SRC
-* <2017-10-15 Sun>
-#+BEGIN_SRC ruby
-  use_bpm 110
-
-  uncomment do live_loop :habanera do
-                 use_synth :fm
-                 use_transpose -12
-                 notes = ring(:d, :r, :r, :a, :f5, :r, :a, :r)
-                 notes.each do |n|
-                   play n
-                   sleep 0.25
-                 end
-               end
-  end
-
-  live_loop :aftermath do
-    [star,light,star,bright].each do |m|
-      m.each do |n|
-        apocalypse_hat(n)
-        sleep 0.25
-      end
-    end
-  end
-
-  define :apocalypse_hat do |co|
-    sample :drum_cymbal_closed, cutoff: co
-  end
-
-  define :star do
-    [130,80,112,80]
-  end
-
-  define :light do
-    [125,85,90,85]
-  end
-
-  define :bright do
-    [130,60,60,120]
-  end
-
-live_loop :pm do
-  pretty_melody(16, :C).each do |n|
-    play n, pan: range(-0.75, 0.5).choose
-    sleep 0.25
-  end
-end
-
-define :pretty_melody do |len, scl|
-  scl = note(scl)
-  notes = []
-  len.times do |n|
-    if rrand(0,1) > 0.3
-      notes << :r
-    else
-      notes << scl + knit(0,5,1,1,3,4,4,1,5,3,7,3).choose
-    end
-  end
-  notes
-end
-
-# if the last two notes were in the bottom half of the scale, transpose down 50% of time
-# if in the top half, transpose up 50% of time
-# use note outside of scale 15% of time
-#+END_SRC
-* <2017-10-19 Thu> recording input looper
-#+BEGIN_SRC ruby
-
-  use_bpm 110
-
-  define :looper do |name, dur|
-    loop_key = (name.to_s + "_looper").to_sym
-    puts "getting loop key"
-    puts get(loop_key)
-    if get loop_key
-      puts "play s"
-      puts name
-      puts dur
-      sample buffer(name)
-      sleep dur
-    else
-      puts "record s"
-      with_fx :record, buffer: buffer(name, dur) do
-        live_audio :mic
-      end
-      puts "done rec"
-      sleep 8
-      puts "after sleep"
-      live_audio :mic, :stop
-      set loop_key, true
-    end
-  end
-
-  live_loop :practice do
-    looper(:abs, 8)
-  end
-
-  # NOT WORKING YET
-#+END_SRC
-* <2017-10-22 Sun> Alesis Drum kit config first take
-#+BEGIN_SRC ruby
-  ### Alesis Drum Kit Config
-  live_loop :hihat do
-    use_real_time
-    note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/control_change"
-    set :hihatval, velocity
-  end
-
-  define :current_hh do
-    get :hihatval
-  end
-
-  live_loop :pads do
-    use_real_time
-    note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/note_on"
-    puts "note: #{note}"
-    puts "velocity: #{velocity}"
-
-    if note == 36 # black
-      puts "black pad"
-      play_black_pad(velocity)
-    elsif note == 38 # yellow
-      puts "yellow pad"
-    elsif note == 47 # red
-      puts "red pad"
-    elsif note == 45 # green
-      puts "green pad"
-    elsif note == 43 # blue
-      puts "blue pad"
-    end
-  end
-
-  define :play_black_pad do |v|
-    play chord(:C, :major).tick
-  end
-
-
-#+END_SRC
-* COMMENT <2017-10-25 Wed> forest & mind
-#+BEGIN_SRC ruby
-
-  use_bpm 84
-
-  live_loop :wind do
-    use_synth :piano
-    [1,3,5,4,1,3,4,5].each do |n|
-      play chord_degree(n,:Fs3, :major)[0..2], sustain: 1, decay: 2
-      sleep 4
-    end
-  end
-
-  live_loop :bd do
-    sample :bd_haus
-    sleep 1
-  end
-
-  live_loop :bass do
-    use_synth :beep
-    use_transpose -12
-    2.times do
-      play 54, attack: 0.01, decay: 0.1
-      sleep 0.5
-    end
-    sleep 0.5
-    play 61, attack: 0.03, decay: 0.1
-    sleep 2.5
-  end
-
-#+END_SRC
-* <2017-10-29 Sun> Tari jam
-#+BEGIN_SRC ruby
-  use_bpm 82
-
-  # hollow, dark_ambiance
-  live_loop :wind do
-    stop
-    use_synth :dark_ambience
-    [1,3,5,4,1,3,4,5].each do |n|
-      play chord_degree(n,:Fs3, :major)[0..2],
-           attack: 1,
-           env_curve: 4,
-           sustain: 1,
-           decay: 1
-      sleep 4
-    end
-  end
-
-  live_loop :bd do
-    sample :bd_haus,
-           cutoff: 110,
-           attack: 0.025,
-           pan: rrand(-1,1)
-    sleep 1
-  end
-
-  live_loop :bass do
-    use_synth :beep
-    use_transpose -12
-    2.times do
-      play 54, attack: 0.01, decay: 0.1
-      sleep 0.5
-    end
-    sleep 0.5
-    play 61, attack: 0.03, decay: 0.1
-    sleep 2.5
-  end
-
-
-#+END_SRC
-* <2017-10-31 Tue>
- #+BEGIN_SRC ruby
-
-
-   ### Alesis Drum Kit Config
-   live_loop :hihat do
-     use_real_time
-     note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/control_change"
-     set :hihatval, velocity
-   end
-
-   define :current_hh do
-     get :hihatval
-   end
-   use_synth :tb303
-   live_loop :pads do
-     use_synth :tb303
-     use_real_time
-     note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/note_on"
-     puts "note: #{note}"
-     puts "velocity: #{velocity}"
-
-     if note == 36 # black
-       puts "black pad"
-       play_black_pad(velocity)
-     elsif note == 38 # yellow
-       puts "yellow pad"
-       play_yellow_pad(velocity)
-     elsif note == 47 # red
-       puts "red pad"
-       play_red_pad(velocity)
-     elsif note == 45 # green
-       puts "green pad"
-       play_green_pad(velocity)
-     elsif note == 43 # blue
-       puts "blue pad"
-       play_blue_pad(velocity)
-     end
-   end
-
-   use_synth :tb303
-   ss_name =:major7
-
-   define :play_black_pad do |v|
-     puts ss_name
-     play chord(:, ss_name ).tick, amp: (v/70.0)
-   end
-
-   define :play_yellow_pad do |v|
-     play chord(:C, ss_name).tick, amp: (v/70.0)
-   end
-
-   define :play_red_pad do |v|
-     puts (v/70)
-     play chord(:C, ss_name).tick, amp: (v/70.0)
-   end
-
-   define :play_green_pad do |v|
-     play chord(:C, ss_name).tick, amp: (v/70.0)
-   end
-
-   define :play_blue_pad do |v|
-     play chord(:C, ss_name).tick, amp: (v/70.0)
-   end
- #+END_SRC
-* <2017-10-31 Tue> forest & mind II
-#+BEGIN_SRC ruby
-  use_bpm 82
-
-  # hollow, dark_ambiance
-  live_loop :wind do
-    stop
-    use_synth :dark_ambience
-    [1,3,5,4,1,3,4,5].each do |n|
-      play chord_degree(n,:Fs3, :major)[0..2],
-           attack: 1,
-           env_curve: 4,
-           sustain: 1,
-           decay: 1
-      sleep 4
-    end
-  end
-
-  live_loop :bd do
-    sample :bd_haus,
-           cutoff: 110,
-           attack: 0.025,
-           pan: rrand(-1,1)
-    sleep 1
-  end
-
-  live_loop :bass do
-    use_synth :beep
-    use_transpose -12
-    2.times do
-      play 54, attack: 0.01, decay: 0.1
-      sleep 0.5
-    end
-    sleep 0.5
-    play 61, attack: 0.03, decay: 0.1
-    sleep 2.5
-  end
-
-#+END_SRC
-* <2017-11-12 Sun> rassi jam
-#+BEGIN_SRC ruby
-  use_bpm 95
-
-  live_loop :amen do
-    with_fx :slicer, phase: 0.5 do
-      sample :loop_amen,
-             beat_stretch: 4,
-             cutoff: 100
-      play :C2, sustain: 0.5
-
-    end
-    sleep 4
-  end
-
-  #live_loop :bassline do'
-
-#+END_SRC
-* <2017-11-15 Wed> haus to the haus garage
-#+BEGIN_SRC ruby
-  use_bpm 125
-  haus_samps = "/Users/daniel/recording/samples/haus/"
-
-  define :door_latch do
-    sample haus_samps, "door", start: 0.25, finish: 0.4, beat_stretch: 2, lpf: 100
-  end
-
-  define :garage_door_full do
-    garage_door(0,1)
-  end
-
-  define :garage_door do |s, f|
-    sample haus_samps, "door_garage", start: s, finish: f
-  end
-
-  define :garage_door_mod do |s,f|
-    sample haus_samps, "door_garage", start: s, finish: f, pan: -0.8, pan_slide: 8
-  end
-
-  define :big_haus_full do
-    big_haus(0.05,1)
-  end
-
-  define :big_haus do |s,f|
-    sample haus_samps, "big_haus", beat_stretch: 4, start: s, finish: f, pitch: 1, window_size: 0.1
-  end
-
-
-  # 2&4 snare drum sound
-  comment do
-    live_loop :horn do
-      sample haus_samps, "brown_horns", beat_stretch: 4
-      sleep 16
-    end
-
-    live_loop :sample do
-      sleep 32
-      big_haus_full
-    end
-
-    live_loop :enters do
-      sleep 1
-      door_latch
-      sleep 1
-    end
-
-    live_loop :big_hau do
-      sleep 8
-      big_haus_full
-      sleep 16
-    end
-
-
-  end
-  live_loop :bd do
-    sample :bd_haus
-    sleep 1
-  end
-  live_loop :gdc do
-    s = 0.4
-    gs = garage_door_mod(s, s+0.2)
-    control gs, pan: 0.8
-    sleep 8
-  end
-
-  uncomment do
-    live_loop :song do
-      garage_door_full
-      sleep 16
-      range(1,33).each do |n|
-        haus_bd(n/33.0)
-        sleep 1
-      end
-      2.times do |n|
-        garage_door_mod(0.1,0.2) if n%2 == 0
-        8.times do
-          haus_bd(1)
-          sleep 1
-        end
-      end
-      4.times do |n|
-        garage_door_mod(0.3,0.4) if n%4 == 0
-        16.times do
-          haus_bd(1)
-          sleep 1
-        end
-      end
-    end
-  end
-
-  define :haus_bd do |i|
-    sample :bd_haus, lpf: 82*i
-  end
-
-  live_loop :read_xtouch do
-    use_real_time
-    note, val = sync "/midi/x-touch_mini/1/11/control_change"
-
-    if note == 1
-      set :knob1, (val/127.0)
-    elsif note == 2
-      set :knob2, (val/127.0)
-    elsif note == 3
-      set :knob3, (val/127.0)
-    elsif note == 4
-      set :knob4, (val/127.0)
-    elsif note == 5
-      set :knob5, (val/127.0)
-    elsif note == 6
-      set :knob6, (val/127.0)
-    elsif note == 7
-      set :knob7, (val/127.0)
-    elsif note == 8
-      set :knob8, (val/127.0)
-    end
-  end
-
-
-#+END_SRC
-
-* <2017-11-16 Thu> haus to the haus garage draft 1
-#+BEGIN_SRC ruby
-  use_bpm 128
-  haus_samps = "/Users/daniel/recording/samples/haus/"
-
-  define :door_latch do |s,f,r|
-    sample haus_samps, "door", start: s, finish: f, beat_stretch: 2, lpf: 100, rate: r
-  end
-
-  define :garage_door_full do
-    garage_door(0,1)
-  end
-
-  define :garage_door do |s,f|
-    sample haus_samps, "door_garage", start: s, finish: f
-  end
-
-  define :garage_door_mod do |s,f,c|
-    sample haus_samps, "door_garage", start: s, finish: f, pan: -0.8, pan_slide: 4, lpf: c*(130)
-  end
-
-  define :big_haus_full do
-    big_haus(0.05,1)
-  end
-
-  define :big_haus do |s,f|
-    with_fx :reverb, room: 1, damp: 0.7 do
-      with_fx :echo, phase: 1, decay: 1.5 do
-        sample haus_samps, "big_haus", beat_stretch: 3.8, start: s, finish: f, pitch: 1, window_size: 0.027
-      end
-    end
-  end
-
-  define :big_horn do |s,f,c|
-    sample haus_samps, "brown_horns", beat_stretch: 4, start: s, finish: f, lpf: c*(130)
-  end
-
-  ##| live_loop :sample do
-  ##|   s = 2
-  ##|   sleep s
-  ##|   big_haus_full
-  ##|   sleep 8-s
-  ##| end
-
-  ##| live_loop :db do
-  ##|   haus_bd(1)
-  ##|   sleep 1
-  ##| end
-
-  # 2&4 snare drum sound
-  comment do
-    live_loop :horn do
-      sample haus_samps, "brown_horns", beat_stretch: 4
-      sleep 16
-    end
-
-    live_loop :enters do
-      sleep 1
-      door_latch(0.25, 0.4, 1)
-      sleep 1
-    end
-
-    live_loop :big_haus do
-      sleep 8
-      big_haus_full
-      sleep 16
-    end
-    live_loop :bd do
-      haus_bd(1)
-      sleep 1
-    end
-  end
-
-  uncomment do
-    live_loop :song do
-      garage_door_full
-      sleep 16
-
-      64.times do |n|
-        haus_bd((n/90.0))
-        if n%8 == 0
-          gs1 = garage_door_mod(0.4, 0.45,1)
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod(0.69, 0.81,1)
-          control gs2, pan: 0.8
-        end
-        sleep 1
-      end
-      haus_bd(1)
-
-      with_fx :echo, phase: 1, decay: 6, amp: 2 do
-        4.times do |n|
-          door_latch(0.25,1,0.25*n)
-          sleep 0.5
-        end
-      end
-
-      sleep 8
-
-      128.times do |n|
-        big_horn(0,1,(1-(n/256.0))) if n%8 == 0
-        haus_bd(1)
-        door_latch(0.25, 0.4, 1) if n%2 == 1
-        if n > 64
-          if n%8 == 0
-            gs1 = garage_door_mod(0.4, 0.45,(1-(n/256.0)))
-            control gs1, pan: 0.8
-          end
-          if n%8 == 4
-            gs2 = garage_door_mod(0.69, 0.81,(1-(n/256.0)))
-            control gs2, pan: 0.8
-          end
-        end
-        sleep 1
-      end
-
-      128.times do |n|
-        big_horn(0,1,1) if n%8 == 0
-        haus_bd(1)
-        door_latch(0.25, 0.4, 1) if n%2 == 1
-        if n%8 == 0
-          gs1 = garage_door_mod(0.4, 0.45,1)
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod(0.69, 0.81,1)
-          control gs2, pan: 0.8
-        end
-        sleep 1
-      end
-
-      ##| 2.times do |n|
-      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
-      ##|   8.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-      ##| 4.times do |n|
-      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
-      ##|   16.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-    end
-  end
-
-
-  define :haus_bd do |i|
-    return if i == 0
-    sample :bd_haus, lpf: 100*i
-  end
-#+END_SRC
-* <2017-11-16 Thu> garage draft 2
-#+BEGIN_SRC ruby
-  use_bpm 128
-  haus_samps = "/Users/daniel/recording/samples/haus/"
-
-  #
-  # SOUNDS
-  #
-
-  define :door_latch do |s,f,r|
-    sample haus_samps, "door", start: s, finish: f, beat_stretch: 2, lpf: 100, rate: r
-  end
-
-  define :garage_door_full do
-    garage_door(0,1)
-  end
-
-  define :garage_door do |s,f|
-    sample haus_samps, "door_garage", start: s, finish: f
-  end
-
-  define :garage_door_mod do |s,f,c|
-    sample haus_samps, "door_garage", start: s, finish: f, pan: -0.8, pan_slide: 4, lpf: c*(130)
-  end
-
-  define :big_haus_full do
-    big_haus(0.05,1)
-  end
-
-  define :big_haus do |s,f|
-    with_fx :reverb, room: 1, damp: 0.7 do
-      with_fx :echo, phase: 1, decay: 1.5 do
-        sample haus_samps, "big_haus", beat_stretch: 3.8, start: s, finish: f, pitch: 1, window_size: 0.027
-      end
-    end
-  end
-
-  define :haus_bd do |i|
-    return if i == 0
-    sample :bd_haus, lpf: 100*i
-    ##| play 25,
-    ##|   attack: 0.05,
-    ##|   decay: 0.05,
-    ##|   sustain: 0.07,
-    ##|   release: 0.125,
-    ##|   lpf: 100*i
-    sleep 1
-  end
-
-  define :big_horn do |s,f,c|
-    sample haus_samps, "brown_horns", beat_stretch: 4, start: s, finish: f, lpf: c*(130)
-  end
-
-  ##| live_loop :sample do
-  ##|   s = 2
-  ##|   sleep s
-  ##|   big_haus_full
-  ##|   sleep 8-s
-  ##| end
-
-  ##| live_loop :db do
-  ##|   haus_bd(1)
-  ##|   sleep 1
-  ##| end
-
-  # 0.176
-  #
-
-  # 0.9, + 0.0625
-  define :horny_bass do |l|
-    s = 0.9
-    dis = l
-    sample haus_samps, "brown_horns", beat_stretch: 16,
-      start: s,
-      finish: s+dis,
-      amp: 2,
-      attack: 0.02,
-      decay: 0.02
-  end
-
-  define :car_door_close do
-    #takes 4 beats, door close on 4
-    sample haus_samps, "car", start: 0.0929, finish: 0.17, amp: 2
-  end
-
-  ##| live_loop :bassline do
-  ##|   horny_bass(0.07)
-  ##|   sleep 4
-  ##|   horny_bass(0.0625)
-  ##|   sleep 1.5
-  ##|   horny_bass(0.04)
-  ##|   sleep 1
-  ##|   horny_bass(0.03)
-  ##|   sleep 1.5
-  ##| end
-
-  #
-  # LOOPS
-  #
-
-  # 2&4 snare drum sound
-  comment do
-    live_loop :horn do
-      sample haus_samps, "brown_horns", beat_stretch: 4
-      sleep 16
-    end
-
-    live_loop :enters do
-      sleep 1
-      door_latch(0.25, 0.4, 1)
-      sleep 1
-    end
-
-    live_loop :big_haus do
-      sleep 8
-      big_haus_full
-      sleep 16
-    end
-    live_loop :bd do
-      haus_bd(1)
-      sleep 1
-    end
-  end
-
-  #
-  # SONG
-  #
-
-  uncomment do
-    live_loop :song do
-      use_bpm 128
-      garage_door_full
-      sleep 16
-
-      64.times do |n|
-        haus_bd((n/90.0))
-        if n%8 == 0
-          gs1 = garage_door_mod(0.4, 0.45,1)
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod(0.69, 0.81,1)
-          control gs2, pan: 0.8
-        end
-        if n == 60
-          car_door_close
-        end
-        sleep 1
-      end
-      haus_bd(1)
-
-      with_fx :echo, phase: 1, decay: 6, amp: 2 do
-        4.times do |n|
-          door_latch(0.25,1,0.25*n)
-          sleep 0.5
-        end
-      end
-
-      sleep 8
-
-      128.times do |n|
-        big_horn(0,1,(1-(n/256.0))) if n%8 == 0
-        haus_bd(1)
-        door_latch(0.25, 0.4, 1) if n%2 == 1
-        if n > 64
-          if n%8 == 0
-            gs1 = garage_door_mod(0.4, 0.45,(1-(n/256.0)))
-            control gs1, pan: 0.8
-          end
-          if n%8 == 4
-            gs2 = garage_door_mod(0.69, 0.81,(1-(n/256.0)))
-            control gs2, pan: 0.8
-          end
-        end
-        sleep 1
-      end
-
-      128.times do |n|
-        big_horn(0,1,1) if n%8 == 0
-        haus_bd(1)
-        door_latch(0.25, 0.4, 1) if n%2 == 1
-        if n%8 == 0
-          gs1 = garage_door_mod(0.4, 0.45,1)
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod(0.69, 0.81,1)
-          control gs2, pan: 0.8
-        end
-        sleep 1
-      end
-
-      ##| 2.times do |n|
-      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
-      ##|   8.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-      ##| 4.times do |n|
-      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
-      ##|   16.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-    end
-  end
-
-#+END_SRC
-* <2017-11-19 Sun> garage draft
-#+BEGIN_SRC ruby
-  use_bpm 128
-  haus_samps = "/Users/daniel/recording/samples/haus/"
-
-  #
-  # SOUNDS
-  #
-
-  define :door_latch do |s,f,r|
-    sample haus_samps, "door", start: s, finish: f, beat_stretch: 2, lpf: 100, rate: r
-  end
-
-  define :garage_door_full do
-    garage_door(0,1)
-  end
-
-  define :garage_door do |s,f|
-    sample haus_samps, "door_garage", start: s, finish: f
-  end
-
-  define :garage_door_mod do |s,f,c|
-    sample haus_samps, "door_garage", start: s, finish: f, pan: 0, pan_slide: 4, lpf: c*(130)
-  end
-
-  define :big_haus_full do
-    big_haus(0.05,1)
-  end
-
-  define :big_haus do |s,f|
-    with_fx :reverb, room: 1, damp: 0.7 do
-      with_fx :echo, phase: 1, decay: 1.5 do
-        sample haus_samps, "big_haus", beat_stretch: 3.8, start: s, finish: f, pitch: 1, window_size: 0.027
-      end
-    end
-  end
-
-  define :haus_bd do |i|
-    return if i == 0
-    sample :bd_haus, lpf: 100*i
-    play 25,
-      attack: 0.05,
-      decay: 0.05,
-      sustain: 0.07,
-      release: 0.125,
-      lpf: 100*i
-  end
-
-  define :big_horn do |s,f,c|
-    sample haus_samps, "brown_horns", beat_stretch: 4, start: s, finish: f, lpf: c*(130)
-  end
-
-  define :car_door_close do
-    #takes 4 beats, door close on 4
-    sample haus_samps, "car", start: 0.0929, finish: 0.17, amp: 2
-  end
-
-  # 0.9, + 0.0625
-  define :horny_bass do |s,l, c|
-    dis = (l/16.0)
-    with_fx :gverb do
-      sample haus_samps, "brown_horns", beat_stretch: 16,
-        start: s,
-        finish: s+dis,
-        amp: 1.5,
-        attack: 0.02,
-        decay: 0.02,
-        lpf: c*130
-    end
-  end
-
-  define :creaky_door do |hsh|
-    #sample haus_samps, "door_creak", start: hsh[:s], finish: hsh[:f], amp: 10
-    sample haus_samps, "door_creak", hsh,
-      amp: 10
-  end
-
-
-
-  #
-  # Parts
-  #
-
-  define :come_inside do
-    in_thread do
-      8.times do
-        p(16, [
-            [:creaky_door, [1,3], {start: 0.26, finish: 0.29, pan: -0.7}],
-            [:creaky_door, [2,4], {start: 0.23, finish: 0.26, pan: 0.5}],
-            [:creaky_door, [6.5,7.5], {start: 0.225, finish: 0.24, pan: -0.2}],
-            [:creaky_door, [9], {start: 0.23, finish: 0.4}]
-        ])
-      end
-    end
-  end
-
-
-
-  define :hb do
-    in_thread do
-      16.times do |n|
-        co = ((n/16.0))
-        puts "co: #{co}"
-        s1 = 0.05
-        s2 = 0.08
-        horny_bass(s1,1.25,co)
-        sleep 4
-        horny_bass(s2,1.25,co)
-        sleep 1.5
-        horny_bass(s2,0.3,co)
-        sleep 1
-        horny_bass(s2,0.3,co)
-        sleep 1.5
-      end
-    end
-  end
-
-  # door_creak, door, wind, wind_2
-
-  #start: 0.23, finish: 0.4, amp: 2
-
-
-
-  ##| live_loop :bassline do
-  ##|   horny_bass(0.9,0.07)
-  ##|   sleep 4
-  ##|   horny_bass(0.9,0.0625)
-  ##|   sleep 1.5
-  ##|   horny_bass(0.9,0.04)
-  ##|   sleep 1
-  ##|   horny_bass(0.9,0.03)
-  ##|   sleep 1.5
-  ##| end
-
-  #
-  # LOOPS
-  #
-
-  # 2&4 snare drum sound
-  comment do
-    live_loop :horn do
-      sample haus_samps, "brown_horns", beat_stretch: 4
-      sleep 16
-    end
-
-    live_loop :enters do
-      sleep 1
-      door_latch(0.25, 0.4, 1)
-      sleep 1
-    end
-
-    live_loop :big_haus do
-      sleep 8
-      big_haus_full
-      sleep 16
-    end
-
-    live_loop :bd do
-      haus_bd(1)
-      sleep 1
-    end
-  end
-
-  #
-  # SONG
-  #
-
-  uncomment do
-    live_loop :song do
-      garage_door_full
-      sleep 16
-
-      driveway
-
-      walkway
-
-      big_haus_full
-      sleep 8
-
-      go_away
-
-      hb
-      walkway # + some wind sounds?
-
-      garage_door_full # with hb
-
-      # hb, walkway everything all in
-
-      # car sound dies our, or door creaking shut?
-
-
-      ### END
-      ##| big_haus_full
-      ##| sleep 16
-
-      ##| 2.times do |n|
-      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
-      ##|   8.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-      ##| 4.times do |n|
-      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
-      ##|   16.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-    end
-  end
-
-  #
-  # Parts
-  #
-
-
-  define :driveway do
-    64.times do |n|
-      haus_bd((n/90.0))
-      if n%8 == 0
-        gs1 = garage_door_mod(0.4, 0.45,1)
-        control gs1, pan: [-0.5, 0.8].tick
-      end
-      if n%8 == 4
-        gs2 = garage_door_mod(0.69, 0.81,1)
-        control gs2, pan: [-0.8, 0.5].tick
-      end
-      if n == 32
-        sample haus_samps, "car", beat_stretch: 32
-      end
-      if n == 60
-        car_door_close
-      end
-      sleep 1
-    end
-    haus_bd(1)
-
-    with_fx :echo, phase: 1, decay: 6, amp: 1.6 do
-      4.times do |n|
-        door_latch(0.25,1,0.25*n)
-        sleep 0.5
-      end
-    end
-
-    sleep 8
-  end
-
-  define :walkway do
-    64.times do |n|
-      big_horn(0,1,(1-(n/128.0))) if n%8 == 0
-      haus_bd(1)
-      door_latch(0.25, 0.4, 1) if n%2 == 1
-      if n > 32
-        if n%8 == 0
-          gs1 = garage_door_mod(0.4, 0.45, (1-(n/128.0)))
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod(0.69, 0.81, (1-(n/128.0)))
-          control gs2, pan: 0.8
-        end
-      end
-      sleep 1
-    end
-  end
-
-  define :go_away do
-    come_inside
-    hb
-    128.times do |n|
-      puts n
-      haus_bd(0.5)
-      #door_latch(0.25, 0.4, 1) if n%2 == 1
-      if n > 16
-        if n%8 == 0
-          gs1 = garage_door_mod(0.4, 0.45,1)
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod(0.69, 0.81,1)
-          control gs2, pan: 0.8
-        end
-      end
-      if n%8 == 1
-        s = ring(0,0.75,0,0.75).tick
-        puts s, s+0.25
-        big_horn(s,s+0.25,1)
-      end
-
-      sleep 1
-    end
-  end
-
-
-#+END_SRC
-* <2017-11-20 Mon> garage refactored
-#+BEGIN_SRC ruby
-  use_bpm 128
-  haus_samps = "/Users/daniel/recording/samples/haus/"
-
-  #
-  # SOUNDS
-  #
-
-  define :door_latch do |hsh|
-    sample haus_samps, "door", hsh,
-      beat_stretch: 2,
-      lpf: 100
-  end
-
-  define :garage_door_full do
-    garage_door({start: 0, finish: 1})
-  end
-
-  define :garage_door do |hsh|
-    sample haus_samps, "door_garage", hsh
-  end
-
-  define :garage_door_mod do |hsh|
-    sample haus_samps, "door_garage", hsh,
-      lpf: hsh[:cutoff_dec]*130,
-      pan: 0,
-      pan_slide: 4
-  end
-
-  define :big_haus_full do
-    big_haus(0.05,1)
-  end
-
-  define :big_haus do |s,f|
-    with_fx :reverb, room: 1, damp: 0.7 do
-      with_fx :echo, phase: 1, decay: 1.5 do
-        sample haus_samps, "big_haus", beat_stretch: 3.8,
-          start: s,
-          finish: f,
-          pitch: 1,
-          window_size: 0.027
-      end
-    end
-  end
-
-  define :haus_bd do |i|
-    return if i == 0
-    sample :bd_haus, lpf: 100*i
-    play 25,
-      attack: 0.05,
-      decay: 0.05,
-      sustain: 0.07,
-      release: 0.125,
-      lpf: 100*i
-  end
-
-  define :big_horn do |hsh|
-    sample haus_samps, "brown_horns", hsh, beat_stretch: 4,
-      lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
-  end
-
-  define :car_door_close do
-    #takes 4 beats, door close on 4
-    sample haus_samps, "car",start: 0.0929, finish: 0.17, amp: 2
-  end
-
-  define :car_door_hat do
-    sample haus_samps, "car",
-      start: 0.16805, finish: 0.17685,
-      sustain: 0.6,
-      decay: 0.05,
-      hpf: 50,
-      amp: 2
-  end
-
-  define :blades_mod do |num_bars|
-    in_thread do
-      num_bars.times do
-        p(8, [
-            [:car_door_hat, [1.5, 2.5, 4.5, 5.5, 6.5, 7.5]],
-        ])
-      end
-    end
-  end
-
-  define :blades do |num_bars|
-    in_thread do
-      num_bars.times do
-        p(8, [
-            [:car_door_hat, [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]],
-        ])
-      end
-    end
-  end
-
-  # 0.9, + 0.0625
-  define :horn_bass do |hsh|
-    with_fx :lpf, cutoff: 110 do
-      with_fx :gverb, damp: 0.98, pre_damp: 1, room: 9 do
-        sample haus_samps, "brown_horns", hsh, beat_stretch: 16,
-          amp: 1,
-          attack: 0.02,
-          decay: 0.02,
-          lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
-      end
-    end
-  end
-
-  define :creaky_door do |hsh|
-    #sample haus_samps, "door_creak", start: hsh[:s], finish: hsh[:f], amp: 10
-    sample haus_samps, "door_creak", hsh,
-      amp: 10
-  end
-
-
-
-  #
-  # Parts
-  #
-
-  define :come_inside do
-    in_thread do
-      8.times do
-        p(16, [
-            [:creaky_door, [1,3], {start: 0.26, finish: 0.29, pan: -0.7}],
-            [:creaky_door, [2,4], {start: 0.23, finish: 0.26, pan: 0.5}],
-            [:creaky_door, [6.5,7.5], {start: 0.225, finish: 0.24, pan: -0.2}],
-            [:creaky_door, [9], {start: 0.23, finish: 0.4}]
-        ])
-      end
-    end
-  end
-
-  define :horny_bass_ramp do |num_bars|
-    # 1 rep len 8
-    in_thread do
-      s1 = 0.05
-      s2 = 0.08
-      num_bars.times do |n|
-        co = ((n/num_bars.to_f))
-        p(8, [
-            [:horn_bass, [1,5],{start: s1, finish: 0.13, cutoff_dec: co}],
-            [:horn_bass, [6.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}],
-            [:horn_bass, [7.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}]
-        ])
-      end
-    end
-  end
-
-  define :horny_bass do |num_bars|
-    puts "horny bass"
-    s1 = 0.05
-    s2 = 0.08
-    in_thread do
-      num_bars.times do |n|
-        p(8, [
-            [:horn_bass, [1,5],{start: s1, finish: 0.125}],
-            [:horn_bass, [6.5],{start: s2, finish: 0.125}],
-            [:horn_bass, [7.5],{start: s2, finish: 0.125}]
-        ])
-      end
-    end
-  end
-
-  #
-  # SONG
-  #
-
-  uncomment do
-    live_loop :garage do
-      garage_door_full
-      sleep 16
-
-      driveway
-
-      walkway
-
-      big_haus_full
-      sleep 8
-
-      go_away
-
-      doorstep # + some wind sounds?
-
-      garage_door_full # with hb
-      horny_bass(1)
-      sleep 8
-
-      doorstep
-      # hb, walkway everything all in, no cutoffs?
-
-      # car sound dies our, or door creaking shut?
-
-
-      ### END
-      ##| big_haus_full
-      ##| sleep 16
-
-      ##| 2.times do |n|
-      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
-      ##|   8.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-      ##| 4.times do |n|
-      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
-      ##|   16.times do
-      ##|     haus_bd(1)
-      ##|     sleep 1
-      ##|   end
-      ##| end
-    end
-  end
-
-  #
-  # Parts
-  #
-
-
-  define :driveway do
-    cue :driveway
-    64.times do |n|
-      haus_bd((n/90.0))
-      if n < 62
-
-        if n%8 == 0
-          gs1 = garage_door_mod({star: 0.4, finish: 0.45, cutoff_dec: 1})
-          control gs1, pan: [-0.5, 0.8].tick
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish:0.81, cutoff_dec: 1})
-          control gs2, pan: [-0.8, 0.5].tick
-        end
-      end
-      if n == 32
-        sample haus_samps, "car", beat_stretch: 32
-      end
-      if n == 60
-        car_door_close
-      end
-      sleep 1
-    end
-    haus_bd(1)
-
-    with_fx :echo, phase: 1, decay: 6, amp: 1.6 do
-      4.times do |n|
-        door_latch({start: 0.25, finish: 1, rate: 0.25*n})
-        sleep 0.5
-      end
-    end
-
-    sleep 8
-  end
-
-  define :walkway do
-    blades(8)
-    64.times do |n|
-      big_horn({cutoff_dec: (1-(n/128.0))}) if n%8 == 0
-      haus_bd(1)
-      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
-      if n > 32 && n < 56
-        if n%8 == 0
-          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: (1-(n/128.0))})
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: (1-(n/128.0))})
-          control gs2, pan: 0.8
-        end
-      end
-      sleep 1
-    end
-  end
-
-  define :doorstep do
-    blades(4)
-    horny_bass(4)
-    32.times do |n|
-      big_horn({}) if n%8 == 0
-      haus_bd(1)
-      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
-      if n > 32
-        if n%8 == 0
-          gs1 = garage_door_mod({start: 0.4, finish: 0.45})
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish: 0.81})
-          control gs2, pan: 0.8
-        end
-      end
-      sleep 1
-    end
-  end
-
-  define :go_away do
-    horny_bass_ramp(8)
-    blades_mod(8)
-    come_inside
-    64.times do |n|
-      puts n
-      # haus_bd(0.5)
-      door_latch({start: 0.25, finish: 0.4, cutoff_dec: 1}) if n%2 == 1
-      if n > 16
-        if n%8 == 0
-          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: 1})
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: 1})
-          control gs2, pan: 0.8
-        end
-      end
-      if n%8 == 1
-        s = ring(0,0.75,0,0.75).tick
-        puts s, s+0.25
-        big_horn({start: s, finish: s+0.25, cutoff_dec: 1})
-      end
-
-      sleep 1
-    end
-  end
-
-#+END_SRC
-* <2017-11-21 Tue> garage draft
-#+BEGIN_SRC ruby
-  use_bpm 128
-  haus_samps = "/Users/daniel/recording/samples/haus/"
-
-  #
-  # SOUNDS
-  #
-
-  define :door_latch do |hsh|
-    sample haus_samps, "door", hsh,
-      beat_stretch: 2,
-      lpf: 100
-  end
-
-  define :garage_door_full do
-    garage_door({start: 0, finish: 1})
-  end
-
-  define :garage_door do |hsh|
-    sample haus_samps, "door_garage", hsh
-  end
-
-  define :garage_door_mod do |hsh|
-    sample haus_samps, "door_garage", hsh,
-      lpf: (hsh[:cutoff_dec].nil? ?  -1 : hsh[:cutoff_dec]*130),
-      pan: 0,
-      pan_slide: 4
-  end
-
-  define :big_haus_full do
-    big_haus(0.05,1)
-  end
-
-  define :big_haus do |s,f|
-    with_fx :reverb, room: 1, damp: 0.7 do
-      with_fx :echo, phase: 1, decay: 1.5 do
-        sample haus_samps, "big_haus", beat_stretch: 3.8,
-          start: s,
-          finish: f,
-          pitch: 1,
-          window_size: 0.027
-      end
-    end
-  end
-
-  define :haus_bd do |i|
-    return if i == 0
-    sample :bd_haus, lpf: 100*i
-    play 25,
-      attack: 0.05,
-      decay: 0.05,
-      sustain: 0.07,
-      release: 0.125,
-      lpf: 100*i
-  end
-
-  define :big_horn do |hsh|
-    sample haus_samps, "brown_horns", hsh, beat_stretch: 4,
-      lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
-  end
-
-  define :car_door_close do
-    #takes 4 beats, door close on 4
-    sample haus_samps, "car",start: 0.0929, finish: 0.17, amp: 2
-  end
-
-  define :car_door_hat do |hsh|
-    sample haus_samps, "car", hsh,
-      start: 0.16805, finish: 0.1768,
-      sustain: 0.6,
-      decay: 0.05,
-      hpf: 50,
-      amp: (hsh[:amp] || 2)
-  end
-
-
-  # 0.9, + 0.0625
-  define :horn_bass do |hsh|
-    with_fx :lpf, cutoff: 110 do
-      with_fx :gverb, damp: 0.98, pre_damp: 1, room: 9 do
-        sample haus_samps, "brown_horns", hsh, beat_stretch: 16,
-          amp: 1,
-          attack: 0.02,
-          decay: 0.02,
-          lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
-      end
-    end
-  end
-
-  define :creaky_door do |hsh|
-    #sample haus_samps, "door_creak", start: hsh[:s], finish: hsh[:f], amp: 10
-    sample haus_samps, "door_creak", hsh,
-      amp: 10
-  end
-
-
-  define :animal_haus do
-    with_fx :gverb, damp: 0.98, pre_damp: 1, room: 9 do
-      sample haus_samps, "house_stonemason",
-        start: 0.0236, finish: 0.9449, attack: 0.2205, decay: 0.5354, beat_stretch: 4, amp: 0.7
-    end
-  end
-
-
-
-  #
-  #
-  # PARTS
-  #
-  #
-
-  define :come_inside do |num_times|
-    in_thread do
-      num_times.times do
-        p(16, [
-            [:creaky_door, [1,3], {start: 0.26, finish: 0.29, pan: -0.7}],
-            [:creaky_door, [2,4], {start: 0.23, finish: 0.26, pan: 0.5}],
-            [:creaky_door, [6.5,7.5], {start: 0.225, finish: 0.24, pan: -0.2}],
-            [:creaky_door, [9], {start: 0.23, finish: 0.4}]
-        ])
-      end
-    end
-  end
-
-  define :horny_bass_ramp do |num_bars|
-    # 1 rep len 8
-    in_thread do
-      s1 = 0.05
-      s2 = 0.08
-      num_bars.times do |n|
-        co = ((n/num_bars.to_f))
-        p(8, [
-            [:horn_bass, [1,5],{start: s1, finish: 0.13, cutoff_dec: co}],
-            [:horn_bass, [6.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}],
-            [:horn_bass, [7.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}]
-        ])
-      end
-    end
-  end
-
-  define :horny_bass do |num_bars|
-    # 1 rep len 8
-    s1 = 0.05
-    s2 = 0.08
-    in_thread do
-      num_bars.times do |n|
-        p(8, [
-            [:horn_bass, [1,5],{start: s1, finish: 0.125}],
-            [:horn_bass, [6.5],{start: s2, finish: 0.125}],
-            [:horn_bass, [7.5],{start: s2, finish: 0.125}]
-        ])
-      end
-    end
-  end
-
-  define :blades_ramp do |num_bars|
-    # 1 rep len 8
-    in_thread do
-      num_bars.times do |n|
-        p(8, [
-            [:car_door_hat, [1.5,5.5,6.5], {amp: 2*(n/num_bars.to_f)}]
-        ])
-      end
-    end
-  end
-
-  define :blades_mod do |num_bars|
-    # 1 rep len 8
-    in_thread do
-      num_bars.times do
-        p(8, [
-            [:car_door_hat, {}, [1.5, 2.5, 4.5, 5.5, 6.5, 7.5]],
-        ])
-      end
-    end
-  end
-
-  define :blades do |num_bars|
-    # 1 rep len 8
-    in_thread do
-      num_bars.times do
-        p(8, [
-            [:car_door_hat, {}, [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]],
-        ])
-      end
-    end
-  end
-
-  define :windward_ramp do |num_bars|
-    # 1 rep len 16
-    in_thread do
-      num_bars.times do
-        s = sample haus_samps, "wind_2", start: 0.005, finish: 0.0365, amp: 0, amp_slide: 16
-        control s, amp: 1
-      end
-    end
-  end
-
-  define :haus_keys do |num_bars|
-    # 1 rep 16
-    in_thread do
-      num_bars.times do
-        sample haus_samps, "haus_keys", beat_stretch: 16
-      end
-    end
-  end
-
-  define :windward do
-    # 1 rep len 16
-    in_thread do
-      num_bars.times do
-        sample haus_samps, "wind_2", start: 0.005, finish: 0.04
-      end
-    end
-  end
-
-  #
-  #
-  # SECTIONS
-  #
-  #
-
-  define :driveway do
-    cue :driveway
-    64.times do |n|
-      haus_bd((n/90.0))
-      if n < 56
-        if n%8 == 0
-          gs1 = garage_door_mod({star: 0.4, finish: 0.45, cutoff_dec: 1})
-          control gs1, pan: [-0.5, 0.8].tick
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: 1})
-          control gs2, pan: [-0.8, 0.5].tick
-        end
-      end
-      if n == 32
-        sample haus_samps, "car", beat_stretch: 32
-      end
-      if n == 60
-        car_door_close
-      end
-      sleep 1
-    end
-    haus_bd(1)
-
-    with_fx :echo, phase: 1, decay: 6, amp: 1.6 do
-      4.times do |n|
-        door_latch({start: 0.25, finish: 1, rate: 0.25*n})
-        sleep 0.5
-      end
-    end
-
-    sleep 8
-  end
-
-  #driveway
-
-  define :walkway do
-    cue :walkway
-    blades_ramp(8)
-    64.times do |n|
-      big_horn({cutoff_dec: (1-(n/128.0))}) if n%8 == 0
-      haus_bd(1)
-      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
-      if n > 32 && n < 56
-        if n%8 == 0
-          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: (1-(n/128.0))})
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: (1-(n/128.0))})
-          control gs2, pan: 0.8
-        end
-      end
-      sleep 1
-    end
-  end
-
-  define :doorstep_1 do
-    cue :doorstep_1
-    blades_mod(4)
-    horny_bass(4)
-    32.times do |n|
-      big_horn({}) if n%8 == 0
-      haus_bd(1)
-      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
-      if n > 32
-        if n%8 == 0
-          gs1 = garage_door_mod({start: 0.4, finish: 0.45})
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish: 0.81})
-          control gs2, pan: 0.8
-        end
-      end
-      sleep 1
-    end
-  end
-
-  define :doorstep_2 do
-    cue :doorstep_2
-    blades(4)
-    horny_bass(4)
-    windward_ramp(2)
-    32.times do |n|
-      big_horn({}) if n%8 == 0
-      haus_bd(1)
-      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
-      if n%8 == 0
-        gs1 = garage_door_mod({start: 0.4, finish: 0.45})
-        control gs1, pan: 0.8
-      end
-      if n%8 == 4
-        gs2 = garage_door_mod({start: 0.69, finish: 0.81})
-        control gs2, pan: 0.8
-      end
-      sleep 1
-    end
-  end
-
-  define :go_away do
-    cue :go_away
-    horny_bass_ramp(8)
-    blades_mod(8)
-    come_inside(4)
-    64.times do |n|
-      # haus_bd(0.5)
-      door_latch({start: 0.25, finish: 0.4, cutoff_dec: 1}) if n%2 == 1
-      if n > 16
-        if n%8 == 0
-          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: 1})
-          control gs1, pan: 0.8
-        end
-        if n%8 == 4
-          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: 1})
-          control gs2, pan: 0.8
-        end
-      end
-      if n%8 == 1
-        s = ring(0,0.75,0,0.75).tick
-        puts s, s+0.25
-        big_horn({start: s, finish: s+0.25, cutoff_dec: 1})
-      end
-
-      sleep 1
-    end
-  end
-
-  #
-  #
-  # SONG
-  #
-  #
-
-
-  uncomment do
-    live_loop :garage do
-      garage_door_full
-      sleep 16
-
-      driveway
-
-      walkway
-
-      doorstep_1
-
-      animal_haus
-      sleep 4
-
-      go_away
-
-      doorstep_2 # + some wind sounds?
-
-      # take things out one-by-one, till just wind
-
-      ##| garage_door_full
-      ##| horny_bass(1)
-
-      # doostep build: keys
-
-      ##| doorstep_all_in
-      # hb, walkway everything all in, no cutoffs?
-
-      # doorstep 1
-      # car sound dies our, or door creaking shut?
-    end
-  end
-
-#+END_SRC
-* <2017-12-09 Sat> tari jam ready for show
-#+BEGIN_SRC ruby
-  use_bpm 115
-
-  live_loop :test do
-    pp(16,[
-         [:hh, range(1,15,1)],
-         [:bd, [1]]
-       ])
-  end
-
-  define :hh do
-    sample :drum_cymbal_closed, decay: 0.1, amp: 0.25
-  end
-
-
-  live_loop :choirs do
-    sleep 1
-  end
-
-  define :bd do
-    use_synth :fm
-    play :C2, decay: 3, amp: 01
-  end
-
-
-  live_loop :melodie do
-    sleep 16
-  end
-
-
-  live_loop :master_volume do
-    note, val = sync "/midi/x-touch_mini/1/11/control_change"
-  end
-
-
-
-  #### BUFF 2
-
-  ### Alesis: waterfall kit
-
-  use_synth :fm
-  chord_name = :major
-
-  notes = {
-    black_pad: :B2,
-    yellow_pad: :G1,
-    red_pad: :Fs2,
-    green_pad: :B3,
-    blue_pad: :G2,
-    hi_hat: :C5
-  }
-
-  define :synth_player do |note, vel, inc, hsh|
-    puts puts hsh
-    #play chord(note, chord_name)[inc], hsh,
-    play note, hsh,
-      release: 4, cutoff: 100, res: 0.8, wave: 0
-  end
-
-  puts "### WATERFALL KIT"
-
-  ### Alesis Drum Kit Config
-  live_loop :pads do
-    use_real_time
-    note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/note_on"
-    puts "note: #{note}"
-    puts "velocity: #{velocity}"
-
-    if note == 36 # black
-      puts "black pad"
-      play_black_pad(velocity)
-    elsif note == 38 # yellow
-      puts "yellow pad"
-      play_yellow_pad(velocity)
-    elsif note == 47 # red
-      puts "red pad"
-      play_red_pad(velocity)
-    elsif note == 45 # green
-      puts "green pad"
-      play_green_pad(velocity)
-    elsif note == 43 # blue
-      puts "blue pad"
-      play_blue_pad(velocity)
-    elsif note == 46 || note == 44
-      puts "hihat"
-      play_hi_hat(velocity, get[:dm_hh])
-    end
-  end
-
-  live_loop :hh_control do
-    use_real_time
-    note, val = sync "/midi/usb_dm10_midi_interface/0/10/control_change"
-
-    if note == 4
-      puts "new val #{val/127.0}"
-      set :dm_hh, (val/127.0)
-    end
-  end
-
-  define :play_black_pad do |v|
-    synth_player(notes[:black_pad], v, tick, {})
-  end
-
-  define :play_yellow_pad do |v|
-    synth_player(notes[:black_pad], v, tick, {})
-  end
-
-  define :play_red_pad do |v|
-    synth_player(notes[:red_pad], v, tick, {})
-  end
-
-  define :play_green_pad do |v|
-    synth_player(notes[:green_pad], v, tick, {})
-  end
-
-  define :play_blue_pad do |v|
-    synth_player(notes[:blue_pad], v, tick, {})
-  end
-
-  define :play_hi_hat do |v, pedal|
-    synth_player(notes[:hi_hat], v, tick, {amp: (pedal*0.9)+0.05})
-  end
-
-
-  # BUFF 3
-
-
-#+END_SRC
-* <2017-12-19 Tue> fill collins airplane jam
-#+BEGIN_SRC ruby
-  # maybe for "tall dan"
-  use_bpm 97
-
-  define :fill_collins do |hsh|
-    sample "Users/daniel/recording/samples/fill_collins.wav", hsh,
-           amp: 2,
-           beat_stretch: 4,
-           rpitch: -1.25
-  end
-
-  define :hh do
-    sample :drum_cymbal_closed
-  end
-
-  collins_beats = [
-    {start: 0.0, finish: 0.1654},
-    {start: 0.1811, finish: 0.3622},
-    {start: 0.3701, finish: 0.5512},
-    {start: 0.6142, finish: 0.8504},
-    {start: 0.8661, finish: 1.0}
-  ]
-
-  live_loop :test do
-    pp(16,[
-         [:fill_collins, [2,4,6,10,12,14], {start: 0.0501, finish: 0.1654}],
-         [:fill_collins, [8,16], {start: 0.6152, finish: 0.865}],
-         [:fill_collins, [1], {start: 0.865, finish: 1.0}],
-         [:hh, [1.5,1.75,5.5,5.75,9.5,9.75,13.5]]
-       ])
-  end
-
-  fill_collins({start: 0.1811, finish: 0.3622})
-#+END_SRC
-* <2017-12-30 Sat> fill collins airplane jam part deux
-#+BEGIN_SRC ruby
-  # maybe for "tall dan"
-  use_bpm 97
-
-  define :fill_collins do |hsh|
-    sample "Users/daniel/recording/samples/fill_collins.wav", hsh,
-      amp: 2,
-      beat_stretch: 4,
-      rpitch: -1.25
-  end
-
-  define :hh do
-    sample :drum_cymbal_closed
-  end
-
-  collins_beats = [
-    {start: 0.0, finish: 0.1654},
-    {start: 0.1811, finish: 0.3622},
-    {start: 0.3701, finish: 0.5512},
-    {start: 0.6142, finish: 0.8504},
-    {start: 0.8661, finish: 1.0}
-  ]
-
-  live_loop :test do
-    pp(16,[
-         [:fill_collins, [2,4,6,10,12,14], {start: 0.0501, finish: 0.1654}],
-         [:fill_collins, [8,16], {start: 0.6152, finish: 0.865}],
-         [:fill_collins, [1], {start: 0.865, finish: 1.0}],
-         [:hh, [1.5,1.75,5.5,5.75,9.5,9.75,13.5]]
-    ])
-  end
-
-  #fill_collins({start: 0.1811, finish: 0.3622})
-
-  live_loop :ambiance do
-    sync :test
-    use_synth :dull_bell
-    notes = chord(:E3, :major)
-    play_pattern_timed(notes, [1.5,1.5], attack: 0.1, attack_level: 1.5, decay: 4)
-    sleep 4
-    puts "asfd"
-    play_chord chord(:E3,:minor), attack: 0.1, attack_level: 2, decay: 2, amp: 2
-    sleep 4
-  end
-
-  live_loop :melodies do
-    use_synth :pluck
-    notes = scale(:E6, :major_pentatonic).shuffle
-    4.times do
-      notes.each do |n|
-        play n, decay: 1, amp: 2 if one_in(2)
-        sleep 0.5
-      end
-    end
-  end
-#+END_SRC
-* <2017-12-30 Sat> car song
-#+BEGIN_SRC ruby
-  use_bpm 85
-
-  live_loop :headlights do
-    pp(16,[
-         [:hh, range(1,15,1)],
-         [:bd, range(1,15,2)]
-       ])
-  end
-
-  define :hh do
-    sample :drum_cymbal_closed, attack: 0.05
-  end
-
-  define :bd do
-    play :C2, attack: 0.001, attack_level: 2, decay: 0.75
-  end
-
-#+END_SRC
-* <2018-02-26 Mon> slow jam with melody
-*
-* <2018-03-20 Tue> prophet jam
-#+BEGIN_SRC ruby
-  use_bpm 105
-
-  live_loop :tester do
-    stop
-    use_synth :prophet
-    s = play :E, note_slide: 8,
-             amp: 0.5, sustain: 32, amp_slide: 4,
-             cutoff: 50, cutoff_slide: 32,
-             res: 0.75, res_slide: 8
-    control s, amp: 0.7
-    control s, cutoff: 80
-    control s, note: :C
-    control s, res: 0.05
-    sleep 32
-  end
-
-  live_loop :ticker do
-    stop
-    sample :bd_tek, amp: 0.1
-    sample :bd_tek, amp: 0.2, rpitch: -5
-    sample :bd_tek, amp: 0.2, rpitch: 5
-    sample :bd_tek, amp: 0.2, rpitch: -7
-    sleep 1
-  end
-
-#+END_SRC
-* <2018-03-20 Tue> prohet jam part deux
-
-* <2018-04-04 Wed> attempt at ableton sync
-
-#+BEGIN_SRC ruby
-  # Standard Incantations:
-  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
-  #run_file "#{base_dir}xtouch_knobs.rb"
-
-  use_bpm 120
-
-  set(:loop1_vol, nil)
-  set(:knob_1_state, get(:loop1_vol))
-  set(:loop1_vol, 0)
-
-  live_loop :knob1 do
-    use_real_time
-    note, val = sync "/midi/x-touch_mini/1/11/note_on"
-    if (note == 8)
-      cue :loop1
-      set(:loop1_vol,0)
-    elsif (note == 16)
-      set(:loop1_vol, nil)
-    end
-  end
-
-  ####
-
-  live_loop :loop_uno do
-    use_real_time
-    new_vol = get(:loop1_vol)
-    sync :loop1 unless new_vol
-    puts new_vol
-    #with_fx :level, amp: new_vol do |node|
-    #set(:knob1amp, node)
-    news
-    #end
-  end
-
-  define :news do
-    sample :elec_blup
-    sleep 1
-  end
-
-#+END_SRC
 * patterns
 #+BEGIN_SRC ruby
   four_on_the_floor = ring 1, 1, 1, 1
@@ -4435,4 +1782,2798 @@ last section (everything in): 229557ms
   ##|   return array
   ##| end
 
+#+END_SRC
+* sessions
+** <2017-05-21 Sun>
+#+BEGIN_SRC ruby
+  # CHORD PROGRESSION
+  # e.g.
+  play_chord chord_progression([3,4,5,3], :C, :major).tick
+
+  define :chord_progression do |degrees, key, type|
+    progression = []
+    degrees.each do |deg|
+      progression << (chord_degree deg, key, type)
+    end
+    return progression.ring
+  end
+
+
+
+  # SAMPLE TIMED v1: play array of samples with timing, negative means rest
+  # e.g.
+  live_loop :beat do
+    sample_timed [
+      [[:bd_haus], knit(1,16)],
+      [[:drum_snare_soft], [-1,1]*8],
+      [[:drum_cymbal_closed], (knit(-1,15) + [-0.5,0.5])]
+    ]
+  end
+
+  define :sample_timed do |samps|
+    # determine increment
+    inc = 0.005
+
+    # find the maximum length
+    max = 0
+    samps.each do |samp|
+      sum = samp[1].inject(0){ |sum,x| sum + x.abs}
+      max = sum if sum > max
+    end
+
+    (max/inc).times do |n|
+      cur_time = (n * inc).round(3)
+
+      # for each sample determine whether or not to play at this time
+      samps.each do |samp|
+        sum_of_times = 0
+        samp[1].length.times do |i|
+          cum_time = samp[1].take(i).inject(0){ |sum,x| sum + x.abs }
+          if (cum_time == cur_time) && samp[1][i] > 0
+            sample samp[0][0], samp[0][1]
+            break
+          end
+        end
+      end
+
+      # sleep increment time
+      sleep inc
+    end
+  end
+
+
+
+  # GENERATE LISTS
+  knit(1,5) # (generate list of five ones)
+
+  # NEW SAMPLE TIMED (better timekeeping?)
+  define :sample_timed do |samps|
+    puts samps
+    # determine increment
+    inc = 0.125/2
+
+    # find the maximum length
+    max = 0
+    samps.each do |samp|
+      sum = samp[1].inject(0){ |sum,x| sum + x.abs}
+      max = sum if sum > max
+    end
+
+    puts max
+    puts inc
+    puts max/inc
+
+    steps = []
+    (max/inc).times do |n|
+      cur_time = (n * inc).round(3)
+
+      # for each sample determine whether or not to play at this time
+      play_at_this_time = []
+      samps.each do |samp|
+        samp[1].length.times do |i|
+          cum_time = samp[1].take(i).inject(0){ |sum,x| sum + x.abs }
+          if (cum_time == cur_time) && samp[1][i] > 0
+            play_at_this_time << [samp[0][0], samp[0][1]]
+          end
+        end
+      end
+      steps << play_at_this_time
+    end
+
+    # sleep increment time
+    steps.each do |step|
+      step.each do |samp|
+        puts step
+        sample samp[0], samp[1]
+      end
+      sleep inc
+    end
+  end
+
+
+  # wobbly bass: https://gist.github.com/xavriley/92dbba5de1c78177c33d
+#+END_SRC
+
+** <2017-05-22 Mon>
+#+BEGIN_SRC ruby
+four_on_the_floor = ring 1, 1, 1, 1
+downbeats = four_on_the_floor
+dondoko = ring 1, 0.5, 0.5
+
+bd_i_like = [:bd_haus]
+synth_i_like = [
+  :prophet,
+  :dpulse,
+]
+
+# some progressions I like
+# 2127
+# 3212
+#+END_SRC
+** <2017-05-29 Mon>
+Le Poisson Melody
+#+BEGIN_SRC ruby
+  use_bpm 80
+
+  live_loop :poisson_melody do
+    use_synth :beep
+    chords = [:g, :fs, :e, :Fs,
+              :g, :fs,
+              :d, :fs, :a, :d].each{|c| chord :g, :major}
+    play_pattern chords
+  end
+#+END_SRC
+
+https://gist.github.com/darinwilson/a3e5909db339838a67fe
+drum machine
+** <2017-06-15 Thu>
+#+BEGIN_SRC ruby
+  use_bpm 115
+
+  live_loop :bd do
+    8.times do |n|
+      sample :bd_haus
+      sleep 0.5
+      sample :drum_cymbal_pedal
+      sleep 0.5
+    end
+  end
+
+  live_loop :basslines do
+    synth = synth_names.choose
+    use_synth synth
+    puts synth
+    sync_bpm :bd
+    play_pattern_timed chord(:e2, :minor).take(2),
+                       [4,1],
+
+                       puts synth
+  end
+
+
+  # good synths for bass: square, blade?, pretty_bell, tri, dtri, sine, saw, dullbell, chip bass, beep, hollow,
+#+END_SRC
+** <2017-06-26 Mon>
+#+BEGIN_SRC ruby
+  use_bpm 89
+
+  define :hh do
+    sample :drum_cymbal_closed,
+           attack: 0.025,
+           hpf: 110,
+           hpf_attack: 0.05,
+           rate: 1.25
+  end
+
+  live_loop :hihat do
+    7.times do
+      hh
+      sleep 1
+    end
+    sleep 0.5
+    2.times do
+      hh
+      sleep 0.25
+    end
+  end
+  define :bd do
+    sample :bd_haus,
+           rate: 0.8
+  end
+
+  live_loop :bassdrum do
+    sync_bpm :hihat
+    4.times do
+      bd
+      sleep 2
+    end
+  end
+
+  define :sn do
+    sample :elec_snare,
+           rate: 1.5,
+           lpf: 100
+  end
+
+  live_loop :snaredrum do
+    sync_bpm :hihat
+    sleep 1
+    3.times do
+      sn
+      sleep 2
+    end
+  end
+
+  live_loop :basslines do
+    sync_bpm :hihat
+    use_synth :square
+    play_pattern_timed ...
+  end
+
+#+END_SRC
+** <2017-07-03 Mon>
+#+BEGIN_SRC ruby
+  use_bpm 92
+
+  live_loop :ambi do
+    still_waters = :ambi_dark_woosh
+    on_the_lake = 0.4
+    sample still_waters, beat_stretch: 8
+    sleep 8
+  end
+
+  live_loop :beats do
+    sync_bpm :ambi
+    7.times do
+      sample :drum_cymbal_closed, decay: 0.5
+      sleep 1
+    end
+    2.times do
+      sample:drum_cymbal_closed, decay: 0.2
+      sleep 0.25
+    end
+    sleep 0.25
+    sample :drum_cowbell, lpf: 80
+    sleep 0.25
+  end
+
+  live_loop :snares do
+    sync_bpm :ambi
+    2.times do
+      sleep 2
+      sample :drum_snare_soft
+    end
+  end
+
+#+END_SRC
+** <2017-09-03 Sun>
+#+BEGIN_SRC ruby
+  defonce :name_of_fxn
+  # means don't re-eval every time
+  end
+
+  use_bpm 110
+
+  live_loop :slipn do
+    chord(:E2, :minor7).each do |n|
+      play n, sustain: (halves 3,4).tick
+      sleep 4
+    end
+  end
+
+  live_loop :around do
+    sync_bpm :slipn
+    use_synth :pretty_bell
+    with_fx :reverb, reps: 12 do
+      play scale(:E6, :minor).choose, attack: 0.2, decay: 0.6, pan: rdist(1,0), amp: range(0.1, 0.8, 0.5).tick
+      sleep 1
+    end
+  end
+
+  live_loop :goddamn do
+    sync_bpm :slipn
+    3.times do
+      sample :drum_cymbal_soft, decay: 0.125
+      sleep 0.3333
+    end
+    sample :drum_cymbal_open
+    sleep 3
+    3.times do
+      4.times do
+        sample :bd_klub
+        sleep 0.5
+        sample :drum_cymbal_pedal
+        sleep 0.5
+      end
+    end
+  end
+
+
+#+END_SRC
+** <2017-09-08 Fri> ABC song
+#+BEGIN_SRC
+use_bpm 80
+
+# AcBAc
+define :a do |n|
+  if n == 0
+    2.times do
+      sample :bd_fat
+      sleep 0.25
+    end
+  else
+    acbac(n-1)
+  end
+end
+
+define :b do |n|
+  if n == 0
+    2.times do
+      sample :drum_snare_soft
+      sleep 0.25
+    end
+  else
+    bcabc(n-1)
+  end
+end
+
+define :c do |n|
+  if n == 0
+    sample :elec_tick
+    sleep 0.25
+  else
+    n.times do
+      2.times do
+        sample :elec_tick
+        sleep 0.25
+      end
+    end
+    n.times do
+      2.times do
+        sleep 0.25
+      end
+    end
+  end
+end
+
+define :acbac do |n|
+  sample :ambi_choir
+  a(n)
+  c(n)
+  b(n)
+  a(n)
+  c(n)
+end
+
+define :bcabc do |n|
+  sample :ambi_whoosh
+  b(n)
+  c(n)
+  a(n)
+  b(n)
+  c(n)
+end
+
+live_loop :echoes do
+  acbac(2)
+end
+
+
+#+END_SRC
+** <2017-09-08 Fri>
+#+BEGIN_SRC ruby
+use_bpm 95
+
+don_doko = ring(1, 0.5, 0.5)
+siamese = ring(3, 5, 4, 1, 2, 3)
+schoolboys = ring(2, 1, 2, 7)
+
+live_loop :beats do
+  16.times do
+    sample :drum_cymbal_pedal, attack_level: 0.8
+    sleep 1
+  end
+end
+
+live_loop :mel do
+  sync_bpm :beats
+  use_synth :sine
+  3.times do
+    puts schoolboys.tick
+    puts siamese.tick
+    sleep 1
+  end
+end
+
+live_loop :basslines do
+  sync_bpm :beats
+  use_synth :sine
+  scale(:C2, :major).each do |n|
+    play n
+    sleep ring(1,0.5).tick
+  end
+  sleep 4
+  play :C2
+end
+
+
+#+END_SRC
+** <2017-09-09 Sat>
+nice plucky bassline here!
+#+BEGIN_SRC ruby
+
+use_bpm 90
+
+live_loop :bassline do
+  use_synth :pluck
+  with_fx :distortion, mix: 0.1 do
+    knit(0,8,3,8,1,8,7,8).each do |n|
+      play scale(:C2, :major)[n],
+        pan: range(-1,1,0.1).choose,
+        attack: 0.1,
+        amp: 0.7
+      sleep 0.25
+    end
+  end
+end
+
+live_loop :beatwise do
+  sync_bpm :bassline
+  3.times do
+    sample :bd_fat
+    sleep 1
+    sample :drum_snare_soft
+    sleep 1.5
+    sample :bd_fat
+    sleep 0.5
+    sample :drum_snare_soft
+    sleep 1
+  end
+  sleep 3
+  sample :drum_cymbal_open, amp: 0.5, decay: 1
+end
+
+
+#+END_SRC
+**  <2017-10-03 Tue> Habanera
+#+BEGIN_SRC ruby
+  live_loop :habanera do
+    use_synth :fm
+    use_transpose -12
+    notes = ring(:d, :r, :r, :a, :f5, :r, :a, :r)
+    #cue :mel
+    notes.each do |n|
+      play n
+      sleep 0.25
+    end
+  end
+
+  live_loop :drums do
+    8.times do |n|
+      sleep 0.25
+      soft_hat if n.even?
+      sleep 0.25
+      soft_hat
+      sleep 0.5
+    end
+  end
+
+  live_loop :melody do
+    sync :mel
+    use_synth :piano
+    sleep 0.75
+    [75, 74, :r, 73, :r, 72, :r, :r].each do |n|
+      play n
+      sleep 0.25
+    end
+  end
+
+  define :soft_hat do
+    sample :drum_cymbal_pedal, attack: 0.05, decay: 0.5
+  end
+
+  define :pretty_melody do |len, scl|
+    scl = note(scl)
+    notes = []
+    len.times do |n|
+      if rrand(0,1) > 0.25
+        notes << :r
+      else
+
+      end
+    end
+  end
+
+  # if the last two notes were in the bottom half of the scale, transpose down 50% of time
+  # if in the top half, transpose up 50% of time
+  # use note outside of scale 15% of time
+
+#+END_SRC
+** <2017-10-15 Sun>
+#+BEGIN_SRC ruby
+  use_bpm 110
+
+  uncomment do live_loop :habanera do
+                 use_synth :fm
+                 use_transpose -12
+                 notes = ring(:d, :r, :r, :a, :f5, :r, :a, :r)
+                 notes.each do |n|
+                   play n
+                   sleep 0.25
+                 end
+               end
+  end
+
+  live_loop :aftermath do
+    [star,light,star,bright].each do |m|
+      m.each do |n|
+        apocalypse_hat(n)
+        sleep 0.25
+      end
+    end
+  end
+
+  define :apocalypse_hat do |co|
+    sample :drum_cymbal_closed, cutoff: co
+  end
+
+  define :star do
+    [130,80,112,80]
+  end
+
+  define :light do
+    [125,85,90,85]
+  end
+
+  define :bright do
+    [130,60,60,120]
+  end
+
+live_loop :pm do
+  pretty_melody(16, :C).each do |n|
+    play n, pan: range(-0.75, 0.5).choose
+    sleep 0.25
+  end
+end
+
+define :pretty_melody do |len, scl|
+  scl = note(scl)
+  notes = []
+  len.times do |n|
+    if rrand(0,1) > 0.3
+      notes << :r
+    else
+      notes << scl + knit(0,5,1,1,3,4,4,1,5,3,7,3).choose
+    end
+  end
+  notes
+end
+
+# if the last two notes were in the bottom half of the scale, transpose down 50% of time
+# if in the top half, transpose up 50% of time
+# use note outside of scale 15% of time
+#+END_SRC
+** <2017-10-19 Thu> recording input looper
+#+BEGIN_SRC ruby
+
+  use_bpm 110
+
+  define :looper do |name, dur|
+    loop_key = (name.to_s + "_looper").to_sym
+    puts "getting loop key"
+    puts get(loop_key)
+    if get loop_key
+      puts "play s"
+      puts name
+      puts dur
+      sample buffer(name)
+      sleep dur
+    else
+      puts "record s"
+      with_fx :record, buffer: buffer(name, dur) do
+        live_audio :mic
+      end
+      puts "done rec"
+      sleep 8
+      puts "after sleep"
+      live_audio :mic, :stop
+      set loop_key, true
+    end
+  end
+
+  live_loop :practice do
+    looper(:abs, 8)
+  end
+
+  # NOT WORKING YET
+#+END_SRC
+** <2017-10-22 Sun> Alesis Drum kit config first take
+#+BEGIN_SRC ruby
+  ### Alesis Drum Kit Config
+  live_loop :hihat do
+    use_real_time
+    note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/control_change"
+    set :hihatval, velocity
+  end
+
+  define :current_hh do
+    get :hihatval
+  end
+
+  live_loop :pads do
+    use_real_time
+    note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/note_on"
+    puts "note: #{note}"
+    puts "velocity: #{velocity}"
+
+    if note == 36 # black
+      puts "black pad"
+      play_black_pad(velocity)
+    elsif note == 38 # yellow
+      puts "yellow pad"
+    elsif note == 47 # red
+      puts "red pad"
+    elsif note == 45 # green
+      puts "green pad"
+    elsif note == 43 # blue
+      puts "blue pad"
+    end
+  end
+
+  define :play_black_pad do |v|
+    play chord(:C, :major).tick
+  end
+
+
+#+END_SRC
+** <2017-10-25 Wed> forest & mind
+#+BEGIN_SRC ruby
+
+  use_bpm 84
+
+  live_loop :wind do
+    use_synth :piano
+    [1,3,5,4,1,3,4,5].each do |n|
+      play chord_degree(n,:Fs3, :major)[0..2], sustain: 1, decay: 2
+      sleep 4
+    end
+  end
+
+  live_loop :bd do
+    sample :bd_haus
+    sleep 1
+  end
+
+  live_loop :bass do
+    use_synth :beep
+    use_transpose -12
+    2.times do
+      play 54, attack: 0.01, decay: 0.1
+      sleep 0.5
+    end
+    sleep 0.5
+    play 61, attack: 0.03, decay: 0.1
+    sleep 2.5
+  end
+
+#+END_SRC
+** <2017-10-29 Sun> Tari jam
+#+BEGIN_SRC ruby
+  use_bpm 82
+
+  # hollow, dark_ambiance
+  live_loop :wind do
+    stop
+    use_synth :dark_ambience
+    [1,3,5,4,1,3,4,5].each do |n|
+      play chord_degree(n,:Fs3, :major)[0..2],
+           attack: 1,
+           env_curve: 4,
+           sustain: 1,
+           decay: 1
+      sleep 4
+    end
+  end
+
+  live_loop :bd do
+    sample :bd_haus,
+           cutoff: 110,
+           attack: 0.025,
+           pan: rrand(-1,1)
+    sleep 1
+  end
+
+  live_loop :bass do
+    use_synth :beep
+    use_transpose -12
+    2.times do
+      play 54, attack: 0.01, decay: 0.1
+      sleep 0.5
+    end
+    sleep 0.5
+    play 61, attack: 0.03, decay: 0.1
+    sleep 2.5
+  end
+
+
+#+END_SRC
+** <2017-10-31 Tue>
+ #+BEGIN_SRC ruby
+
+
+   ### Alesis Drum Kit Config
+   live_loop :hihat do
+     use_real_time
+     note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/control_change"
+     set :hihatval, velocity
+   end
+
+   define :current_hh do
+     get :hihatval
+   end
+   use_synth :tb303
+   live_loop :pads do
+     use_synth :tb303
+     use_real_time
+     note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/note_on"
+     puts "note: #{note}"
+     puts "velocity: #{velocity}"
+
+     if note == 36 # black
+       puts "black pad"
+       play_black_pad(velocity)
+     elsif note == 38 # yellow
+       puts "yellow pad"
+       play_yellow_pad(velocity)
+     elsif note == 47 # red
+       puts "red pad"
+       play_red_pad(velocity)
+     elsif note == 45 # green
+       puts "green pad"
+       play_green_pad(velocity)
+     elsif note == 43 # blue
+       puts "blue pad"
+       play_blue_pad(velocity)
+     end
+   end
+
+   use_synth :tb303
+   ss_name =:major7
+
+   define :play_black_pad do |v|
+     puts ss_name
+     play chord(:, ss_name ).tick, amp: (v/70.0)
+   end
+
+   define :play_yellow_pad do |v|
+     play chord(:C, ss_name).tick, amp: (v/70.0)
+   end
+
+   define :play_red_pad do |v|
+     puts (v/70)
+     play chord(:C, ss_name).tick, amp: (v/70.0)
+   end
+
+   define :play_green_pad do |v|
+     play chord(:C, ss_name).tick, amp: (v/70.0)
+   end
+
+   define :play_blue_pad do |v|
+     play chord(:C, ss_name).tick, amp: (v/70.0)
+   end
+ #+END_SRC
+** <2017-10-31 Tue> forest & mind II
+#+BEGIN_SRC ruby
+  use_bpm 82
+
+  # hollow, dark_ambiance
+  live_loop :wind do
+    stop
+    use_synth :dark_ambience
+    [1,3,5,4,1,3,4,5].each do |n|
+      play chord_degree(n,:Fs3, :major)[0..2],
+           attack: 1,
+           env_curve: 4,
+           sustain: 1,
+           decay: 1
+      sleep 4
+    end
+  end
+
+  live_loop :bd do
+    sample :bd_haus,
+           cutoff: 110,
+           attack: 0.025,
+           pan: rrand(-1,1)
+    sleep 1
+  end
+
+  live_loop :bass do
+    use_synth :beep
+    use_transpose -12
+    2.times do
+      play 54, attack: 0.01, decay: 0.1
+      sleep 0.5
+    end
+    sleep 0.5
+    play 61, attack: 0.03, decay: 0.1
+    sleep 2.5
+  end
+
+#+END_SRC
+** <2017-11-12 Sun> rassi jam
+#+BEGIN_SRC ruby
+  use_bpm 95
+
+  live_loop :amen do
+    with_fx :slicer, phase: 0.5 do
+      sample :loop_amen,
+             beat_stretch: 4,
+             cutoff: 100
+      play :C2, sustain: 0.5
+
+    end
+    sleep 4
+  end
+
+  #live_loop :bassline do'
+
+#+END_SRC
+** <2017-11-15 Wed> haus to the haus garage
+#+BEGIN_SRC ruby
+  use_bpm 125
+  haus_samps = "/Users/daniel/recording/samples/haus/"
+
+  define :door_latch do
+    sample haus_samps, "door", start: 0.25, finish: 0.4, beat_stretch: 2, lpf: 100
+  end
+
+  define :garage_door_full do
+    garage_door(0,1)
+  end
+
+  define :garage_door do |s, f|
+    sample haus_samps, "door_garage", start: s, finish: f
+  end
+
+  define :garage_door_mod do |s,f|
+    sample haus_samps, "door_garage", start: s, finish: f, pan: -0.8, pan_slide: 8
+  end
+
+  define :big_haus_full do
+    big_haus(0.05,1)
+  end
+
+  define :big_haus do |s,f|
+    sample haus_samps, "big_haus", beat_stretch: 4, start: s, finish: f, pitch: 1, window_size: 0.1
+  end
+
+
+  # 2&4 snare drum sound
+  comment do
+    live_loop :horn do
+      sample haus_samps, "brown_horns", beat_stretch: 4
+      sleep 16
+    end
+
+    live_loop :sample do
+      sleep 32
+      big_haus_full
+    end
+
+    live_loop :enters do
+      sleep 1
+      door_latch
+      sleep 1
+    end
+
+    live_loop :big_hau do
+      sleep 8
+      big_haus_full
+      sleep 16
+    end
+
+
+  end
+  live_loop :bd do
+    sample :bd_haus
+    sleep 1
+  end
+  live_loop :gdc do
+    s = 0.4
+    gs = garage_door_mod(s, s+0.2)
+    control gs, pan: 0.8
+    sleep 8
+  end
+
+  uncomment do
+    live_loop :song do
+      garage_door_full
+      sleep 16
+      range(1,33).each do |n|
+        haus_bd(n/33.0)
+        sleep 1
+      end
+      2.times do |n|
+        garage_door_mod(0.1,0.2) if n%2 == 0
+        8.times do
+          haus_bd(1)
+          sleep 1
+        end
+      end
+      4.times do |n|
+        garage_door_mod(0.3,0.4) if n%4 == 0
+        16.times do
+          haus_bd(1)
+          sleep 1
+        end
+      end
+    end
+  end
+
+  define :haus_bd do |i|
+    sample :bd_haus, lpf: 82*i
+  end
+
+  live_loop :read_xtouch do
+    use_real_time
+    note, val = sync "/midi/x-touch_mini/1/11/control_change"
+
+    if note == 1
+      set :knob1, (val/127.0)
+    elsif note == 2
+      set :knob2, (val/127.0)
+    elsif note == 3
+      set :knob3, (val/127.0)
+    elsif note == 4
+      set :knob4, (val/127.0)
+    elsif note == 5
+      set :knob5, (val/127.0)
+    elsif note == 6
+      set :knob6, (val/127.0)
+    elsif note == 7
+      set :knob7, (val/127.0)
+    elsif note == 8
+      set :knob8, (val/127.0)
+    end
+  end
+
+
+#+END_SRC
+
+** <2017-11-16 Thu> haus to the haus garage draft 1
+#+BEGIN_SRC ruby
+  use_bpm 128
+  haus_samps = "/Users/daniel/recording/samples/haus/"
+
+  define :door_latch do |s,f,r|
+    sample haus_samps, "door", start: s, finish: f, beat_stretch: 2, lpf: 100, rate: r
+  end
+
+  define :garage_door_full do
+    garage_door(0,1)
+  end
+
+  define :garage_door do |s,f|
+    sample haus_samps, "door_garage", start: s, finish: f
+  end
+
+  define :garage_door_mod do |s,f,c|
+    sample haus_samps, "door_garage", start: s, finish: f, pan: -0.8, pan_slide: 4, lpf: c*(130)
+  end
+
+  define :big_haus_full do
+    big_haus(0.05,1)
+  end
+
+  define :big_haus do |s,f|
+    with_fx :reverb, room: 1, damp: 0.7 do
+      with_fx :echo, phase: 1, decay: 1.5 do
+        sample haus_samps, "big_haus", beat_stretch: 3.8, start: s, finish: f, pitch: 1, window_size: 0.027
+      end
+    end
+  end
+
+  define :big_horn do |s,f,c|
+    sample haus_samps, "brown_horns", beat_stretch: 4, start: s, finish: f, lpf: c*(130)
+  end
+
+  ##| live_loop :sample do
+  ##|   s = 2
+  ##|   sleep s
+  ##|   big_haus_full
+  ##|   sleep 8-s
+  ##| end
+
+  ##| live_loop :db do
+  ##|   haus_bd(1)
+  ##|   sleep 1
+  ##| end
+
+  # 2&4 snare drum sound
+  comment do
+    live_loop :horn do
+      sample haus_samps, "brown_horns", beat_stretch: 4
+      sleep 16
+    end
+
+    live_loop :enters do
+      sleep 1
+      door_latch(0.25, 0.4, 1)
+      sleep 1
+    end
+
+    live_loop :big_haus do
+      sleep 8
+      big_haus_full
+      sleep 16
+    end
+    live_loop :bd do
+      haus_bd(1)
+      sleep 1
+    end
+  end
+
+  uncomment do
+    live_loop :song do
+      garage_door_full
+      sleep 16
+
+      64.times do |n|
+        haus_bd((n/90.0))
+        if n%8 == 0
+          gs1 = garage_door_mod(0.4, 0.45,1)
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod(0.69, 0.81,1)
+          control gs2, pan: 0.8
+        end
+        sleep 1
+      end
+      haus_bd(1)
+
+      with_fx :echo, phase: 1, decay: 6, amp: 2 do
+        4.times do |n|
+          door_latch(0.25,1,0.25*n)
+          sleep 0.5
+        end
+      end
+
+      sleep 8
+
+      128.times do |n|
+        big_horn(0,1,(1-(n/256.0))) if n%8 == 0
+        haus_bd(1)
+        door_latch(0.25, 0.4, 1) if n%2 == 1
+        if n > 64
+          if n%8 == 0
+            gs1 = garage_door_mod(0.4, 0.45,(1-(n/256.0)))
+            control gs1, pan: 0.8
+          end
+          if n%8 == 4
+            gs2 = garage_door_mod(0.69, 0.81,(1-(n/256.0)))
+            control gs2, pan: 0.8
+          end
+        end
+        sleep 1
+      end
+
+      128.times do |n|
+        big_horn(0,1,1) if n%8 == 0
+        haus_bd(1)
+        door_latch(0.25, 0.4, 1) if n%2 == 1
+        if n%8 == 0
+          gs1 = garage_door_mod(0.4, 0.45,1)
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod(0.69, 0.81,1)
+          control gs2, pan: 0.8
+        end
+        sleep 1
+      end
+
+      ##| 2.times do |n|
+      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
+      ##|   8.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+      ##| 4.times do |n|
+      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
+      ##|   16.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+    end
+  end
+
+
+  define :haus_bd do |i|
+    return if i == 0
+    sample :bd_haus, lpf: 100*i
+  end
+#+END_SRC
+** <2017-11-16 Thu> garage draft 2
+#+BEGIN_SRC ruby
+  use_bpm 128
+  haus_samps = "/Users/daniel/recording/samples/haus/"
+
+  #
+  # SOUNDS
+  #
+
+  define :door_latch do |s,f,r|
+    sample haus_samps, "door", start: s, finish: f, beat_stretch: 2, lpf: 100, rate: r
+  end
+
+  define :garage_door_full do
+    garage_door(0,1)
+  end
+
+  define :garage_door do |s,f|
+    sample haus_samps, "door_garage", start: s, finish: f
+  end
+
+  define :garage_door_mod do |s,f,c|
+    sample haus_samps, "door_garage", start: s, finish: f, pan: -0.8, pan_slide: 4, lpf: c*(130)
+  end
+
+  define :big_haus_full do
+    big_haus(0.05,1)
+  end
+
+  define :big_haus do |s,f|
+    with_fx :reverb, room: 1, damp: 0.7 do
+      with_fx :echo, phase: 1, decay: 1.5 do
+        sample haus_samps, "big_haus", beat_stretch: 3.8, start: s, finish: f, pitch: 1, window_size: 0.027
+      end
+    end
+  end
+
+  define :haus_bd do |i|
+    return if i == 0
+    sample :bd_haus, lpf: 100*i
+    ##| play 25,
+    ##|   attack: 0.05,
+    ##|   decay: 0.05,
+    ##|   sustain: 0.07,
+    ##|   release: 0.125,
+    ##|   lpf: 100*i
+    sleep 1
+  end
+
+  define :big_horn do |s,f,c|
+    sample haus_samps, "brown_horns", beat_stretch: 4, start: s, finish: f, lpf: c*(130)
+  end
+
+  ##| live_loop :sample do
+  ##|   s = 2
+  ##|   sleep s
+  ##|   big_haus_full
+  ##|   sleep 8-s
+  ##| end
+
+  ##| live_loop :db do
+  ##|   haus_bd(1)
+  ##|   sleep 1
+  ##| end
+
+  # 0.176
+  #
+
+  # 0.9, + 0.0625
+  define :horny_bass do |l|
+    s = 0.9
+    dis = l
+    sample haus_samps, "brown_horns", beat_stretch: 16,
+      start: s,
+      finish: s+dis,
+      amp: 2,
+      attack: 0.02,
+      decay: 0.02
+  end
+
+  define :car_door_close do
+    #takes 4 beats, door close on 4
+    sample haus_samps, "car", start: 0.0929, finish: 0.17, amp: 2
+  end
+
+  ##| live_loop :bassline do
+  ##|   horny_bass(0.07)
+  ##|   sleep 4
+  ##|   horny_bass(0.0625)
+  ##|   sleep 1.5
+  ##|   horny_bass(0.04)
+  ##|   sleep 1
+  ##|   horny_bass(0.03)
+  ##|   sleep 1.5
+  ##| end
+
+  #
+  # LOOPS
+  #
+
+  # 2&4 snare drum sound
+  comment do
+    live_loop :horn do
+      sample haus_samps, "brown_horns", beat_stretch: 4
+      sleep 16
+    end
+
+    live_loop :enters do
+      sleep 1
+      door_latch(0.25, 0.4, 1)
+      sleep 1
+    end
+
+    live_loop :big_haus do
+      sleep 8
+      big_haus_full
+      sleep 16
+    end
+    live_loop :bd do
+      haus_bd(1)
+      sleep 1
+    end
+  end
+
+  #
+  # SONG
+  #
+
+  uncomment do
+    live_loop :song do
+      use_bpm 128
+      garage_door_full
+      sleep 16
+
+      64.times do |n|
+        haus_bd((n/90.0))
+        if n%8 == 0
+          gs1 = garage_door_mod(0.4, 0.45,1)
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod(0.69, 0.81,1)
+          control gs2, pan: 0.8
+        end
+        if n == 60
+          car_door_close
+        end
+        sleep 1
+      end
+      haus_bd(1)
+
+      with_fx :echo, phase: 1, decay: 6, amp: 2 do
+        4.times do |n|
+          door_latch(0.25,1,0.25*n)
+          sleep 0.5
+        end
+      end
+
+      sleep 8
+
+      128.times do |n|
+        big_horn(0,1,(1-(n/256.0))) if n%8 == 0
+        haus_bd(1)
+        door_latch(0.25, 0.4, 1) if n%2 == 1
+        if n > 64
+          if n%8 == 0
+            gs1 = garage_door_mod(0.4, 0.45,(1-(n/256.0)))
+            control gs1, pan: 0.8
+          end
+          if n%8 == 4
+            gs2 = garage_door_mod(0.69, 0.81,(1-(n/256.0)))
+            control gs2, pan: 0.8
+          end
+        end
+        sleep 1
+      end
+
+      128.times do |n|
+        big_horn(0,1,1) if n%8 == 0
+        haus_bd(1)
+        door_latch(0.25, 0.4, 1) if n%2 == 1
+        if n%8 == 0
+          gs1 = garage_door_mod(0.4, 0.45,1)
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod(0.69, 0.81,1)
+          control gs2, pan: 0.8
+        end
+        sleep 1
+      end
+
+      ##| 2.times do |n|
+      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
+      ##|   8.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+      ##| 4.times do |n|
+      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
+      ##|   16.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+    end
+  end
+
+#+END_SRC
+** <2017-11-19 Sun> garage draft
+#+BEGIN_SRC ruby
+  use_bpm 128
+  haus_samps = "/Users/daniel/recording/samples/haus/"
+
+  #
+  # SOUNDS
+  #
+
+  define :door_latch do |s,f,r|
+    sample haus_samps, "door", start: s, finish: f, beat_stretch: 2, lpf: 100, rate: r
+  end
+
+  define :garage_door_full do
+    garage_door(0,1)
+  end
+
+  define :garage_door do |s,f|
+    sample haus_samps, "door_garage", start: s, finish: f
+  end
+
+  define :garage_door_mod do |s,f,c|
+    sample haus_samps, "door_garage", start: s, finish: f, pan: 0, pan_slide: 4, lpf: c*(130)
+  end
+
+  define :big_haus_full do
+    big_haus(0.05,1)
+  end
+
+  define :big_haus do |s,f|
+    with_fx :reverb, room: 1, damp: 0.7 do
+      with_fx :echo, phase: 1, decay: 1.5 do
+        sample haus_samps, "big_haus", beat_stretch: 3.8, start: s, finish: f, pitch: 1, window_size: 0.027
+      end
+    end
+  end
+
+  define :haus_bd do |i|
+    return if i == 0
+    sample :bd_haus, lpf: 100*i
+    play 25,
+      attack: 0.05,
+      decay: 0.05,
+      sustain: 0.07,
+      release: 0.125,
+      lpf: 100*i
+  end
+
+  define :big_horn do |s,f,c|
+    sample haus_samps, "brown_horns", beat_stretch: 4, start: s, finish: f, lpf: c*(130)
+  end
+
+  define :car_door_close do
+    #takes 4 beats, door close on 4
+    sample haus_samps, "car", start: 0.0929, finish: 0.17, amp: 2
+  end
+
+  # 0.9, + 0.0625
+  define :horny_bass do |s,l, c|
+    dis = (l/16.0)
+    with_fx :gverb do
+      sample haus_samps, "brown_horns", beat_stretch: 16,
+        start: s,
+        finish: s+dis,
+        amp: 1.5,
+        attack: 0.02,
+        decay: 0.02,
+        lpf: c*130
+    end
+  end
+
+  define :creaky_door do |hsh|
+    #sample haus_samps, "door_creak", start: hsh[:s], finish: hsh[:f], amp: 10
+    sample haus_samps, "door_creak", hsh,
+      amp: 10
+  end
+
+
+
+  #
+  # Parts
+  #
+
+  define :come_inside do
+    in_thread do
+      8.times do
+        p(16, [
+            [:creaky_door, [1,3], {start: 0.26, finish: 0.29, pan: -0.7}],
+            [:creaky_door, [2,4], {start: 0.23, finish: 0.26, pan: 0.5}],
+            [:creaky_door, [6.5,7.5], {start: 0.225, finish: 0.24, pan: -0.2}],
+            [:creaky_door, [9], {start: 0.23, finish: 0.4}]
+        ])
+      end
+    end
+  end
+
+
+
+  define :hb do
+    in_thread do
+      16.times do |n|
+        co = ((n/16.0))
+        puts "co: #{co}"
+        s1 = 0.05
+        s2 = 0.08
+        horny_bass(s1,1.25,co)
+        sleep 4
+        horny_bass(s2,1.25,co)
+        sleep 1.5
+        horny_bass(s2,0.3,co)
+        sleep 1
+        horny_bass(s2,0.3,co)
+        sleep 1.5
+      end
+    end
+  end
+
+  # door_creak, door, wind, wind_2
+
+  #start: 0.23, finish: 0.4, amp: 2
+
+
+
+  ##| live_loop :bassline do
+  ##|   horny_bass(0.9,0.07)
+  ##|   sleep 4
+  ##|   horny_bass(0.9,0.0625)
+  ##|   sleep 1.5
+  ##|   horny_bass(0.9,0.04)
+  ##|   sleep 1
+  ##|   horny_bass(0.9,0.03)
+  ##|   sleep 1.5
+  ##| end
+
+  #
+  # LOOPS
+  #
+
+  # 2&4 snare drum sound
+  comment do
+    live_loop :horn do
+      sample haus_samps, "brown_horns", beat_stretch: 4
+      sleep 16
+    end
+
+    live_loop :enters do
+      sleep 1
+      door_latch(0.25, 0.4, 1)
+      sleep 1
+    end
+
+    live_loop :big_haus do
+      sleep 8
+      big_haus_full
+      sleep 16
+    end
+
+    live_loop :bd do
+      haus_bd(1)
+      sleep 1
+    end
+  end
+
+  #
+  # SONG
+  #
+
+  uncomment do
+    live_loop :song do
+      garage_door_full
+      sleep 16
+
+      driveway
+
+      walkway
+
+      big_haus_full
+      sleep 8
+
+      go_away
+
+      hb
+      walkway # + some wind sounds?
+
+      garage_door_full # with hb
+
+      # hb, walkway everything all in
+
+      # car sound dies our, or door creaking shut?
+
+
+      ### END
+      ##| big_haus_full
+      ##| sleep 16
+
+      ##| 2.times do |n|
+      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
+      ##|   8.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+      ##| 4.times do |n|
+      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
+      ##|   16.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+    end
+  end
+
+  #
+  # Parts
+  #
+
+
+  define :driveway do
+    64.times do |n|
+      haus_bd((n/90.0))
+      if n%8 == 0
+        gs1 = garage_door_mod(0.4, 0.45,1)
+        control gs1, pan: [-0.5, 0.8].tick
+      end
+      if n%8 == 4
+        gs2 = garage_door_mod(0.69, 0.81,1)
+        control gs2, pan: [-0.8, 0.5].tick
+      end
+      if n == 32
+        sample haus_samps, "car", beat_stretch: 32
+      end
+      if n == 60
+        car_door_close
+      end
+      sleep 1
+    end
+    haus_bd(1)
+
+    with_fx :echo, phase: 1, decay: 6, amp: 1.6 do
+      4.times do |n|
+        door_latch(0.25,1,0.25*n)
+        sleep 0.5
+      end
+    end
+
+    sleep 8
+  end
+
+  define :walkway do
+    64.times do |n|
+      big_horn(0,1,(1-(n/128.0))) if n%8 == 0
+      haus_bd(1)
+      door_latch(0.25, 0.4, 1) if n%2 == 1
+      if n > 32
+        if n%8 == 0
+          gs1 = garage_door_mod(0.4, 0.45, (1-(n/128.0)))
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod(0.69, 0.81, (1-(n/128.0)))
+          control gs2, pan: 0.8
+        end
+      end
+      sleep 1
+    end
+  end
+
+  define :go_away do
+    come_inside
+    hb
+    128.times do |n|
+      puts n
+      haus_bd(0.5)
+      #door_latch(0.25, 0.4, 1) if n%2 == 1
+      if n > 16
+        if n%8 == 0
+          gs1 = garage_door_mod(0.4, 0.45,1)
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod(0.69, 0.81,1)
+          control gs2, pan: 0.8
+        end
+      end
+      if n%8 == 1
+        s = ring(0,0.75,0,0.75).tick
+        puts s, s+0.25
+        big_horn(s,s+0.25,1)
+      end
+
+      sleep 1
+    end
+  end
+
+
+#+END_SRC
+** <2017-11-20 Mon> garage refactored
+#+BEGIN_SRC ruby
+  use_bpm 128
+  haus_samps = "/Users/daniel/recording/samples/haus/"
+
+  #
+  # SOUNDS
+  #
+
+  define :door_latch do |hsh|
+    sample haus_samps, "door", hsh,
+      beat_stretch: 2,
+      lpf: 100
+  end
+
+  define :garage_door_full do
+    garage_door({start: 0, finish: 1})
+  end
+
+  define :garage_door do |hsh|
+    sample haus_samps, "door_garage", hsh
+  end
+
+  define :garage_door_mod do |hsh|
+    sample haus_samps, "door_garage", hsh,
+      lpf: hsh[:cutoff_dec]*130,
+      pan: 0,
+      pan_slide: 4
+  end
+
+  define :big_haus_full do
+    big_haus(0.05,1)
+  end
+
+  define :big_haus do |s,f|
+    with_fx :reverb, room: 1, damp: 0.7 do
+      with_fx :echo, phase: 1, decay: 1.5 do
+        sample haus_samps, "big_haus", beat_stretch: 3.8,
+          start: s,
+          finish: f,
+          pitch: 1,
+          window_size: 0.027
+      end
+    end
+  end
+
+  define :haus_bd do |i|
+    return if i == 0
+    sample :bd_haus, lpf: 100*i
+    play 25,
+      attack: 0.05,
+      decay: 0.05,
+      sustain: 0.07,
+      release: 0.125,
+      lpf: 100*i
+  end
+
+  define :big_horn do |hsh|
+    sample haus_samps, "brown_horns", hsh, beat_stretch: 4,
+      lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
+  end
+
+  define :car_door_close do
+    #takes 4 beats, door close on 4
+    sample haus_samps, "car",start: 0.0929, finish: 0.17, amp: 2
+  end
+
+  define :car_door_hat do
+    sample haus_samps, "car",
+      start: 0.16805, finish: 0.17685,
+      sustain: 0.6,
+      decay: 0.05,
+      hpf: 50,
+      amp: 2
+  end
+
+  define :blades_mod do |num_bars|
+    in_thread do
+      num_bars.times do
+        p(8, [
+            [:car_door_hat, [1.5, 2.5, 4.5, 5.5, 6.5, 7.5]],
+        ])
+      end
+    end
+  end
+
+  define :blades do |num_bars|
+    in_thread do
+      num_bars.times do
+        p(8, [
+            [:car_door_hat, [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]],
+        ])
+      end
+    end
+  end
+
+  # 0.9, + 0.0625
+  define :horn_bass do |hsh|
+    with_fx :lpf, cutoff: 110 do
+      with_fx :gverb, damp: 0.98, pre_damp: 1, room: 9 do
+        sample haus_samps, "brown_horns", hsh, beat_stretch: 16,
+          amp: 1,
+          attack: 0.02,
+          decay: 0.02,
+          lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
+      end
+    end
+  end
+
+  define :creaky_door do |hsh|
+    #sample haus_samps, "door_creak", start: hsh[:s], finish: hsh[:f], amp: 10
+    sample haus_samps, "door_creak", hsh,
+      amp: 10
+  end
+
+
+
+  #
+  # Parts
+  #
+
+  define :come_inside do
+    in_thread do
+      8.times do
+        p(16, [
+            [:creaky_door, [1,3], {start: 0.26, finish: 0.29, pan: -0.7}],
+            [:creaky_door, [2,4], {start: 0.23, finish: 0.26, pan: 0.5}],
+            [:creaky_door, [6.5,7.5], {start: 0.225, finish: 0.24, pan: -0.2}],
+            [:creaky_door, [9], {start: 0.23, finish: 0.4}]
+        ])
+      end
+    end
+  end
+
+  define :horny_bass_ramp do |num_bars|
+    # 1 rep len 8
+    in_thread do
+      s1 = 0.05
+      s2 = 0.08
+      num_bars.times do |n|
+        co = ((n/num_bars.to_f))
+        p(8, [
+            [:horn_bass, [1,5],{start: s1, finish: 0.13, cutoff_dec: co}],
+            [:horn_bass, [6.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}],
+            [:horn_bass, [7.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}]
+        ])
+      end
+    end
+  end
+
+  define :horny_bass do |num_bars|
+    puts "horny bass"
+    s1 = 0.05
+    s2 = 0.08
+    in_thread do
+      num_bars.times do |n|
+        p(8, [
+            [:horn_bass, [1,5],{start: s1, finish: 0.125}],
+            [:horn_bass, [6.5],{start: s2, finish: 0.125}],
+            [:horn_bass, [7.5],{start: s2, finish: 0.125}]
+        ])
+      end
+    end
+  end
+
+  #
+  # SONG
+  #
+
+  uncomment do
+    live_loop :garage do
+      garage_door_full
+      sleep 16
+
+      driveway
+
+      walkway
+
+      big_haus_full
+      sleep 8
+
+      go_away
+
+      doorstep # + some wind sounds?
+
+      garage_door_full # with hb
+      horny_bass(1)
+      sleep 8
+
+      doorstep
+      # hb, walkway everything all in, no cutoffs?
+
+      # car sound dies our, or door creaking shut?
+
+
+      ### END
+      ##| big_haus_full
+      ##| sleep 16
+
+      ##| 2.times do |n|
+      ##|   garage_door_mod(0.1,0.2) if n%2 == 0
+      ##|   8.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+      ##| 4.times do |n|
+      ##|   garage_door_mod(0.3,0.4) if n%4 == 0
+      ##|   16.times do
+      ##|     haus_bd(1)
+      ##|     sleep 1
+      ##|   end
+      ##| end
+    end
+  end
+
+  #
+  # Parts
+  #
+
+
+  define :driveway do
+    cue :driveway
+    64.times do |n|
+      haus_bd((n/90.0))
+      if n < 62
+
+        if n%8 == 0
+          gs1 = garage_door_mod({star: 0.4, finish: 0.45, cutoff_dec: 1})
+          control gs1, pan: [-0.5, 0.8].tick
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish:0.81, cutoff_dec: 1})
+          control gs2, pan: [-0.8, 0.5].tick
+        end
+      end
+      if n == 32
+        sample haus_samps, "car", beat_stretch: 32
+      end
+      if n == 60
+        car_door_close
+      end
+      sleep 1
+    end
+    haus_bd(1)
+
+    with_fx :echo, phase: 1, decay: 6, amp: 1.6 do
+      4.times do |n|
+        door_latch({start: 0.25, finish: 1, rate: 0.25*n})
+        sleep 0.5
+      end
+    end
+
+    sleep 8
+  end
+
+  define :walkway do
+    blades(8)
+    64.times do |n|
+      big_horn({cutoff_dec: (1-(n/128.0))}) if n%8 == 0
+      haus_bd(1)
+      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
+      if n > 32 && n < 56
+        if n%8 == 0
+          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: (1-(n/128.0))})
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: (1-(n/128.0))})
+          control gs2, pan: 0.8
+        end
+      end
+      sleep 1
+    end
+  end
+
+  define :doorstep do
+    blades(4)
+    horny_bass(4)
+    32.times do |n|
+      big_horn({}) if n%8 == 0
+      haus_bd(1)
+      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
+      if n > 32
+        if n%8 == 0
+          gs1 = garage_door_mod({start: 0.4, finish: 0.45})
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish: 0.81})
+          control gs2, pan: 0.8
+        end
+      end
+      sleep 1
+    end
+  end
+
+  define :go_away do
+    horny_bass_ramp(8)
+    blades_mod(8)
+    come_inside
+    64.times do |n|
+      puts n
+      # haus_bd(0.5)
+      door_latch({start: 0.25, finish: 0.4, cutoff_dec: 1}) if n%2 == 1
+      if n > 16
+        if n%8 == 0
+          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: 1})
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: 1})
+          control gs2, pan: 0.8
+        end
+      end
+      if n%8 == 1
+        s = ring(0,0.75,0,0.75).tick
+        puts s, s+0.25
+        big_horn({start: s, finish: s+0.25, cutoff_dec: 1})
+      end
+
+      sleep 1
+    end
+  end
+
+#+END_SRC
+** <2017-11-21 Tue> garage draft
+#+BEGIN_SRC ruby
+  use_bpm 128
+  haus_samps = "/Users/daniel/recording/samples/haus/"
+
+  #
+  # SOUNDS
+  #
+
+  define :door_latch do |hsh|
+    sample haus_samps, "door", hsh,
+      beat_stretch: 2,
+      lpf: 100
+  end
+
+  define :garage_door_full do
+    garage_door({start: 0, finish: 1})
+  end
+
+  define :garage_door do |hsh|
+    sample haus_samps, "door_garage", hsh
+  end
+
+  define :garage_door_mod do |hsh|
+    sample haus_samps, "door_garage", hsh,
+      lpf: (hsh[:cutoff_dec].nil? ?  -1 : hsh[:cutoff_dec]*130),
+      pan: 0,
+      pan_slide: 4
+  end
+
+  define :big_haus_full do
+    big_haus(0.05,1)
+  end
+
+  define :big_haus do |s,f|
+    with_fx :reverb, room: 1, damp: 0.7 do
+      with_fx :echo, phase: 1, decay: 1.5 do
+        sample haus_samps, "big_haus", beat_stretch: 3.8,
+          start: s,
+          finish: f,
+          pitch: 1,
+          window_size: 0.027
+      end
+    end
+  end
+
+  define :haus_bd do |i|
+    return if i == 0
+    sample :bd_haus, lpf: 100*i
+    play 25,
+      attack: 0.05,
+      decay: 0.05,
+      sustain: 0.07,
+      release: 0.125,
+      lpf: 100*i
+  end
+
+  define :big_horn do |hsh|
+    sample haus_samps, "brown_horns", hsh, beat_stretch: 4,
+      lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
+  end
+
+  define :car_door_close do
+    #takes 4 beats, door close on 4
+    sample haus_samps, "car",start: 0.0929, finish: 0.17, amp: 2
+  end
+
+  define :car_door_hat do |hsh|
+    sample haus_samps, "car", hsh,
+      start: 0.16805, finish: 0.1768,
+      sustain: 0.6,
+      decay: 0.05,
+      hpf: 50,
+      amp: (hsh[:amp] || 2)
+  end
+
+
+  # 0.9, + 0.0625
+  define :horn_bass do |hsh|
+    with_fx :lpf, cutoff: 110 do
+      with_fx :gverb, damp: 0.98, pre_damp: 1, room: 9 do
+        sample haus_samps, "brown_horns", hsh, beat_stretch: 16,
+          amp: 1,
+          attack: 0.02,
+          decay: 0.02,
+          lpf: (hsh[:cutoff_dec].nil? ? 130 : hsh[:cutoff_dec]*130)
+      end
+    end
+  end
+
+  define :creaky_door do |hsh|
+    #sample haus_samps, "door_creak", start: hsh[:s], finish: hsh[:f], amp: 10
+    sample haus_samps, "door_creak", hsh,
+      amp: 10
+  end
+
+
+  define :animal_haus do
+    with_fx :gverb, damp: 0.98, pre_damp: 1, room: 9 do
+      sample haus_samps, "house_stonemason",
+        start: 0.0236, finish: 0.9449, attack: 0.2205, decay: 0.5354, beat_stretch: 4, amp: 0.7
+    end
+  end
+
+
+
+  #
+  #
+  # PARTS
+  #
+  #
+
+  define :come_inside do |num_times|
+    in_thread do
+      num_times.times do
+        p(16, [
+            [:creaky_door, [1,3], {start: 0.26, finish: 0.29, pan: -0.7}],
+            [:creaky_door, [2,4], {start: 0.23, finish: 0.26, pan: 0.5}],
+            [:creaky_door, [6.5,7.5], {start: 0.225, finish: 0.24, pan: -0.2}],
+            [:creaky_door, [9], {start: 0.23, finish: 0.4}]
+        ])
+      end
+    end
+  end
+
+  define :horny_bass_ramp do |num_bars|
+    # 1 rep len 8
+    in_thread do
+      s1 = 0.05
+      s2 = 0.08
+      num_bars.times do |n|
+        co = ((n/num_bars.to_f))
+        p(8, [
+            [:horn_bass, [1,5],{start: s1, finish: 0.13, cutoff_dec: co}],
+            [:horn_bass, [6.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}],
+            [:horn_bass, [7.5],{start: s2, finish: 0.15, sustain: 0.2, decay: 0.05, cutoff_dec: co}]
+        ])
+      end
+    end
+  end
+
+  define :horny_bass do |num_bars|
+    # 1 rep len 8
+    s1 = 0.05
+    s2 = 0.08
+    in_thread do
+      num_bars.times do |n|
+        p(8, [
+            [:horn_bass, [1,5],{start: s1, finish: 0.125}],
+            [:horn_bass, [6.5],{start: s2, finish: 0.125}],
+            [:horn_bass, [7.5],{start: s2, finish: 0.125}]
+        ])
+      end
+    end
+  end
+
+  define :blades_ramp do |num_bars|
+    # 1 rep len 8
+    in_thread do
+      num_bars.times do |n|
+        p(8, [
+            [:car_door_hat, [1.5,5.5,6.5], {amp: 2*(n/num_bars.to_f)}]
+        ])
+      end
+    end
+  end
+
+  define :blades_mod do |num_bars|
+    # 1 rep len 8
+    in_thread do
+      num_bars.times do
+        p(8, [
+            [:car_door_hat, {}, [1.5, 2.5, 4.5, 5.5, 6.5, 7.5]],
+        ])
+      end
+    end
+  end
+
+  define :blades do |num_bars|
+    # 1 rep len 8
+    in_thread do
+      num_bars.times do
+        p(8, [
+            [:car_door_hat, {}, [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]],
+        ])
+      end
+    end
+  end
+
+  define :windward_ramp do |num_bars|
+    # 1 rep len 16
+    in_thread do
+      num_bars.times do
+        s = sample haus_samps, "wind_2", start: 0.005, finish: 0.0365, amp: 0, amp_slide: 16
+        control s, amp: 1
+      end
+    end
+  end
+
+  define :haus_keys do |num_bars|
+    # 1 rep 16
+    in_thread do
+      num_bars.times do
+        sample haus_samps, "haus_keys", beat_stretch: 16
+      end
+    end
+  end
+
+  define :windward do
+    # 1 rep len 16
+    in_thread do
+      num_bars.times do
+        sample haus_samps, "wind_2", start: 0.005, finish: 0.04
+      end
+    end
+  end
+
+  #
+  #
+  # SECTIONS
+  #
+  #
+
+  define :driveway do
+    cue :driveway
+    64.times do |n|
+      haus_bd((n/90.0))
+      if n < 56
+        if n%8 == 0
+          gs1 = garage_door_mod({star: 0.4, finish: 0.45, cutoff_dec: 1})
+          control gs1, pan: [-0.5, 0.8].tick
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: 1})
+          control gs2, pan: [-0.8, 0.5].tick
+        end
+      end
+      if n == 32
+        sample haus_samps, "car", beat_stretch: 32
+      end
+      if n == 60
+        car_door_close
+      end
+      sleep 1
+    end
+    haus_bd(1)
+
+    with_fx :echo, phase: 1, decay: 6, amp: 1.6 do
+      4.times do |n|
+        door_latch({start: 0.25, finish: 1, rate: 0.25*n})
+        sleep 0.5
+      end
+    end
+
+    sleep 8
+  end
+
+  #driveway
+
+  define :walkway do
+    cue :walkway
+    blades_ramp(8)
+    64.times do |n|
+      big_horn({cutoff_dec: (1-(n/128.0))}) if n%8 == 0
+      haus_bd(1)
+      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
+      if n > 32 && n < 56
+        if n%8 == 0
+          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: (1-(n/128.0))})
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: (1-(n/128.0))})
+          control gs2, pan: 0.8
+        end
+      end
+      sleep 1
+    end
+  end
+
+  define :doorstep_1 do
+    cue :doorstep_1
+    blades_mod(4)
+    horny_bass(4)
+    32.times do |n|
+      big_horn({}) if n%8 == 0
+      haus_bd(1)
+      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
+      if n > 32
+        if n%8 == 0
+          gs1 = garage_door_mod({start: 0.4, finish: 0.45})
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish: 0.81})
+          control gs2, pan: 0.8
+        end
+      end
+      sleep 1
+    end
+  end
+
+  define :doorstep_2 do
+    cue :doorstep_2
+    blades(4)
+    horny_bass(4)
+    windward_ramp(2)
+    32.times do |n|
+      big_horn({}) if n%8 == 0
+      haus_bd(1)
+      door_latch({start: 0.25, finish: 0.4, rate: 1}) if n%2 == 1
+      if n%8 == 0
+        gs1 = garage_door_mod({start: 0.4, finish: 0.45})
+        control gs1, pan: 0.8
+      end
+      if n%8 == 4
+        gs2 = garage_door_mod({start: 0.69, finish: 0.81})
+        control gs2, pan: 0.8
+      end
+      sleep 1
+    end
+  end
+
+  define :go_away do
+    cue :go_away
+    horny_bass_ramp(8)
+    blades_mod(8)
+    come_inside(4)
+    64.times do |n|
+      # haus_bd(0.5)
+      door_latch({start: 0.25, finish: 0.4, cutoff_dec: 1}) if n%2 == 1
+      if n > 16
+        if n%8 == 0
+          gs1 = garage_door_mod({start: 0.4, finish: 0.45, cutoff_dec: 1})
+          control gs1, pan: 0.8
+        end
+        if n%8 == 4
+          gs2 = garage_door_mod({start: 0.69, finish: 0.81, cutoff_dec: 1})
+          control gs2, pan: 0.8
+        end
+      end
+      if n%8 == 1
+        s = ring(0,0.75,0,0.75).tick
+        puts s, s+0.25
+        big_horn({start: s, finish: s+0.25, cutoff_dec: 1})
+      end
+
+      sleep 1
+    end
+  end
+
+  #
+  #
+  # SONG
+  #
+  #
+
+
+  uncomment do
+    live_loop :garage do
+      garage_door_full
+      sleep 16
+
+      driveway
+
+      walkway
+
+      doorstep_1
+
+      animal_haus
+      sleep 4
+
+      go_away
+
+      doorstep_2 # + some wind sounds?
+
+      # take things out one-by-one, till just wind
+
+      ##| garage_door_full
+      ##| horny_bass(1)
+
+      # doostep build: keys
+
+      ##| doorstep_all_in
+      # hb, walkway everything all in, no cutoffs?
+
+      # doorstep 1
+      # car sound dies our, or door creaking shut?
+    end
+  end
+
+#+END_SRC
+** <2017-12-09 Sat> tari jam ready for show
+#+BEGIN_SRC ruby
+  use_bpm 115
+
+  live_loop :test do
+    pp(16,[
+         [:hh, range(1,15,1)],
+         [:bd, [1]]
+       ])
+  end
+
+  define :hh do
+    sample :drum_cymbal_closed, decay: 0.1, amp: 0.25
+  end
+
+
+  live_loop :choirs do
+    sleep 1
+  end
+
+  define :bd do
+    use_synth :fm
+    play :C2, decay: 3, amp: 01
+  end
+
+
+  live_loop :melodie do
+    sleep 16
+  end
+
+
+  live_loop :master_volume do
+    note, val = sync "/midi/x-touch_mini/1/11/control_change"
+  end
+
+
+
+  #### BUFF 2
+
+  ### Alesis: waterfall kit
+
+  use_synth :fm
+  chord_name = :major
+
+  notes = {
+    black_pad: :B2,
+    yellow_pad: :G1,
+    red_pad: :Fs2,
+    green_pad: :B3,
+    blue_pad: :G2,
+    hi_hat: :C5
+  }
+
+  define :synth_player do |note, vel, inc, hsh|
+    puts puts hsh
+    #play chord(note, chord_name)[inc], hsh,
+    play note, hsh,
+      release: 4, cutoff: 100, res: 0.8, wave: 0
+  end
+
+  puts "### WATERFALL KIT"
+
+  ### Alesis Drum Kit Config
+  live_loop :pads do
+    use_real_time
+    note, velocity = sync "/midi/usb_dm10_midi_interface/0/10/note_on"
+    puts "note: #{note}"
+    puts "velocity: #{velocity}"
+
+    if note == 36 # black
+      puts "black pad"
+      play_black_pad(velocity)
+    elsif note == 38 # yellow
+      puts "yellow pad"
+      play_yellow_pad(velocity)
+    elsif note == 47 # red
+      puts "red pad"
+      play_red_pad(velocity)
+    elsif note == 45 # green
+      puts "green pad"
+      play_green_pad(velocity)
+    elsif note == 43 # blue
+      puts "blue pad"
+      play_blue_pad(velocity)
+    elsif note == 46 || note == 44
+      puts "hihat"
+      play_hi_hat(velocity, get[:dm_hh])
+    end
+  end
+
+  live_loop :hh_control do
+    use_real_time
+    note, val = sync "/midi/usb_dm10_midi_interface/0/10/control_change"
+
+    if note == 4
+      puts "new val #{val/127.0}"
+      set :dm_hh, (val/127.0)
+    end
+  end
+
+  define :play_black_pad do |v|
+    synth_player(notes[:black_pad], v, tick, {})
+  end
+
+  define :play_yellow_pad do |v|
+    synth_player(notes[:black_pad], v, tick, {})
+  end
+
+  define :play_red_pad do |v|
+    synth_player(notes[:red_pad], v, tick, {})
+  end
+
+  define :play_green_pad do |v|
+    synth_player(notes[:green_pad], v, tick, {})
+  end
+
+  define :play_blue_pad do |v|
+    synth_player(notes[:blue_pad], v, tick, {})
+  end
+
+  define :play_hi_hat do |v, pedal|
+    synth_player(notes[:hi_hat], v, tick, {amp: (pedal*0.9)+0.05})
+  end
+
+
+  # BUFF 3
+
+
+#+END_SRC
+** <2017-12-19 Tue> fill collins airplane jam
+#+BEGIN_SRC ruby
+  # maybe for "tall dan"
+  use_bpm 97
+
+  define :fill_collins do |hsh|
+    sample "Users/daniel/recording/samples/fill_collins.wav", hsh,
+           amp: 2,
+           beat_stretch: 4,
+           rpitch: -1.25
+  end
+
+  define :hh do
+    sample :drum_cymbal_closed
+  end
+
+  collins_beats = [
+    {start: 0.0, finish: 0.1654},
+    {start: 0.1811, finish: 0.3622},
+    {start: 0.3701, finish: 0.5512},
+    {start: 0.6142, finish: 0.8504},
+    {start: 0.8661, finish: 1.0}
+  ]
+
+  live_loop :test do
+    pp(16,[
+         [:fill_collins, [2,4,6,10,12,14], {start: 0.0501, finish: 0.1654}],
+         [:fill_collins, [8,16], {start: 0.6152, finish: 0.865}],
+         [:fill_collins, [1], {start: 0.865, finish: 1.0}],
+         [:hh, [1.5,1.75,5.5,5.75,9.5,9.75,13.5]]
+       ])
+  end
+
+  fill_collins({start: 0.1811, finish: 0.3622})
+#+END_SRC
+** <2017-12-30 Sat> fill collins airplane jam part deux
+#+BEGIN_SRC ruby
+  # maybe for "tall dan"
+  use_bpm 97
+
+  define :fill_collins do |hsh|
+    sample "Users/daniel/recording/samples/fill_collins.wav", hsh,
+      amp: 2,
+      beat_stretch: 4,
+      rpitch: -1.25
+  end
+
+  define :hh do
+    sample :drum_cymbal_closed
+  end
+
+  collins_beats = [
+    {start: 0.0, finish: 0.1654},
+    {start: 0.1811, finish: 0.3622},
+    {start: 0.3701, finish: 0.5512},
+    {start: 0.6142, finish: 0.8504},
+    {start: 0.8661, finish: 1.0}
+  ]
+
+  live_loop :test do
+    pp(16,[
+         [:fill_collins, [2,4,6,10,12,14], {start: 0.0501, finish: 0.1654}],
+         [:fill_collins, [8,16], {start: 0.6152, finish: 0.865}],
+         [:fill_collins, [1], {start: 0.865, finish: 1.0}],
+         [:hh, [1.5,1.75,5.5,5.75,9.5,9.75,13.5]]
+    ])
+  end
+
+  #fill_collins({start: 0.1811, finish: 0.3622})
+
+  live_loop :ambiance do
+    sync :test
+    use_synth :dull_bell
+    notes = chord(:E3, :major)
+    play_pattern_timed(notes, [1.5,1.5], attack: 0.1, attack_level: 1.5, decay: 4)
+    sleep 4
+    puts "asfd"
+    play_chord chord(:E3,:minor), attack: 0.1, attack_level: 2, decay: 2, amp: 2
+    sleep 4
+  end
+
+  live_loop :melodies do
+    use_synth :pluck
+    notes = scale(:E6, :major_pentatonic).shuffle
+    4.times do
+      notes.each do |n|
+        play n, decay: 1, amp: 2 if one_in(2)
+        sleep 0.5
+      end
+    end
+  end
+#+END_SRC
+** <2017-12-30 Sat> car song
+#+BEGIN_SRC ruby
+  use_bpm 85
+
+  live_loop :headlights do
+    pp(16,[
+         [:hh, range(1,15,1)],
+         [:bd, range(1,15,2)]
+       ])
+  end
+
+  define :hh do
+    sample :drum_cymbal_closed, attack: 0.05
+  end
+
+  define :bd do
+    play :C2, attack: 0.001, attack_level: 2, decay: 0.75
+  end
+
+#+END_SRC
+** <2018-02-26 Mon> slow jam with melody
+*
+** <2018-03-20 Tue> prophet jam
+#+BEGIN_SRC ruby
+  use_bpm 105
+
+  live_loop :tester do
+    stop
+    use_synth :prophet
+    s = play :E, note_slide: 8,
+             amp: 0.5, sustain: 32, amp_slide: 4,
+             cutoff: 50, cutoff_slide: 32,
+             res: 0.75, res_slide: 8
+    control s, amp: 0.7
+    control s, cutoff: 80
+    control s, note: :C
+    control s, res: 0.05
+    sleep 32
+  end
+
+  live_loop :ticker do
+    stop
+    sample :bd_tek, amp: 0.1
+    sample :bd_tek, amp: 0.2, rpitch: -5
+    sample :bd_tek, amp: 0.2, rpitch: 5
+    sample :bd_tek, amp: 0.2, rpitch: -7
+    sleep 1
+  end
+
+#+END_SRC
+
+** <2018-04-04 Wed> attempt at ableton sync
+
+#+BEGIN_SRC ruby
+  # Standard Incantations:
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  #run_file "#{base_dir}xtouch_knobs.rb"
+
+  use_bpm 120
+
+  set(:loop1_vol, nil)
+  set(:knob_1_state, get(:loop1_vol))
+  set(:loop1_vol, 0)
+
+  live_loop :knob1 do
+    use_real_time
+    note, val = sync "/midi/x-touch_mini/1/11/note_on"
+    if (note == 8)
+      cue :loop1
+      set(:loop1_vol,0)
+    elsif (note == 16)
+      set(:loop1_vol, nil)
+    end
+  end
+
+  ####
+
+  live_loop :loop_uno do
+    use_real_time
+    new_vol = get(:loop1_vol)
+    sync :loop1 unless new_vol
+    puts new_vol
+    #with_fx :level, amp: new_vol do |node|
+    #set(:knob1amp, node)
+    news
+    #end
+  end
+
+  define :news do
+    sample :elec_blup
+    sleep 1
+  end
+
+#+END_SRC
+** <2018-04-11 Wed> midnight standards jam
+#+BEGIN_SRC ruby
+  use_bpm 120
+
+  live_loop :drummies do
+    s = sample :loop_safari, beat_stretch: 16, amp: 1,
+               cutoff: 80, cutoff_slide: 8
+    control s, cutoff: 127
+    sleep 8
+    control s, cutoff: 80
+    sleep 8
+  end
+
+  live_loop :synths1 do
+    use_synth :tb303
+    s = play :D1, amp: 0.1,
+             attack: 1, decay: 1, sustain: 6, release: 8,
+             cutoff: 60, cutoff_slide: 8
+    control s, cutoff: 100
+    sleep 8
+    control s, cutoff: 30
+    sleep 8
+  end
+
+  live_loop :bd do
+    use_synth :fm
+    sample :bd_808
+    with_fx :level, amp: 1 do
+      play :D2, amp: 0.6,
+           attack: 0, sustain: 0.1, release: 0.2
+      play :D1, amp: 0.3,
+           attack: 0, sustain: 0.2, release: 0.25
+      play 35, amp: 0.3,
+           attack: 0, sustain: 0.1, release: 1
+      sleep 1
+    end
+
+  end
+
+  live_loop :standards do
+    use_synth :prophet
+    chrd = chord(:D2, :minor7)
+    chrd.each do |n|
+      4.times do |t|
+        play n, amp: 0.8, cutoff: 70
+        sleep 0.25
+      end
+    end
+  end
+
+
+#+END_SRC
+** <2018-05-26 Sat> passtimes jam
+#+BEGIN_SRC ruby
+  # Standard Incantations:
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  run_file "#{base_dir}xtouch_knobs.rb"
+
+  use_bpm 120
+
+  live_loop :bassline do
+    use_synth :beep
+    n = 40
+    note = (ring n, n+7, n+5, n).tick
+
+    2.times do
+      at [0.5, 1, 2] do
+        bass(note)
+      end
+      sleep 3
+    end
+  end
+
+  define :bass do |note|
+    play note, amp: 1, attack: 0.01, noise_amp: 0.7, pluck_decay: 30, coef: 0.8 if one_in(1.1)
+  end
+
+  live_loop :passtimes do
+    with_fx :lpf, cutoff: 100 do
+      t = knit(0,6, -7,6, -5,6, -3,6).tick(:trans)
+      use_transpose t
+      puts t
+
+      4.times do |n|
+        puts chord(:D5, :major7).tick(:mel)
+        play chord(:D5, :major7).tick, amp: 0.6, sustain: 0 if one_in(2) || n == 2
+        sleep 0.25
+      end
+    end
+  end
+
+#+END_SRC
+** <2018-05-26 Sat> premier kit breakdown
+#+BEGIN_SRC ruby
+  # Standard Incantations:
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  premier_directory = "/Volumes/dan/PREMIER\ BEATS/Premier\ Beats\ -\ Loops\ Wav/"
+  premier_ks_95 = "#{premier_directory}/05\ Kick-Snare\ Loops/95\ Bpm\ Kick-Snare\ Loops/"
+  premier_ks_85 = "#{premier_directory}/05\ Kick-Snare\ Loops/85\ Bpm\ Kick-Snare\ Loops/"
+  premier_ks_90 = "#{premier_directory}02\ Chord\ Loops/"
+
+  run_file "#{base_dir}xtouch_knobs.rb"
+
+  use_bpm 120
+
+  live_loop :premier1 do
+
+    sample premier_ks_95, 27, beat_streth: 8
+
+    sleep 8
+  end
+
+
+#+END_SRC
+** <2018-05-26 Sat> scale matching attempt
+#+BEGIN_SRC ruby
+  nots =  [:C3, :Cs3, :E3, :F3, :G]
+  #nts = nots.map { |n| note(n) }
+
+  matching_scales = {}
+
+  scale_names.each do |sn|
+    puts sn
+    count = 0
+    scale(:C3, sn).each do |sn_nt|
+      #puts nots[0]
+      puts sn_nt
+
+      #  count += 1 if sn_nt == n
+    end
+    matching_scales[sn] = count if count > 0
+  end
+
+  puts matching_scales
+
+  #nt_nums = nts.map { |nt| note(nt) }
+
+  #puts nt_nums
+
+  #puts scale(:C3, scale_names.first)
 #+END_SRC
