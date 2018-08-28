@@ -4577,3 +4577,46 @@ end
 
   #puts scale(:C3, scale_names.first)
 #+END_SRC
+** <2018-08-25 Sat> bad ketchup
+#+BEGIN_SRC ruby
+  live_loop :bad_ketchup do
+    roots = ring(:C2, :E2, :G2, :A2)
+    rt = roots[(get(:knob_9_state)*4).to_i]
+    chords = ring(:r) + scale(rt, :major) +
+             scale(note(rt) + 12, :major) +
+             scale(note(rt) + 24, :major)
+
+    8.times do |n|
+      play chords[(24*get("knob_#{n+1}_state".to_sym)).floor],
+           attack: 0.05, decay: 0.05, sustain: 0.02, release: 0.005
+
+      sleep 0.25
+    end
+  end
+
+
+  set(:waiter, false)
+
+  live_loop :bassline do
+    use_synth :fm
+    chrd = chord(:E2, :major7)
+    tick_reset(:achrd)
+    s = play chrd.tick(:achrd), amp: 0.75,
+             attack: 0.25, decay: 1.85, release: 4,
+             depth: 0.5, depth_slide: 4
+
+    control s, depth: 4
+    sleep 1
+    4.times do
+      control s, note: chrd.tick(:achrd)
+      sleep 1
+    end
+
+    sleep 3
+    play chrd[0], amp: 0.5,
+         attack: 0.25, release: 2
+
+    sleep 8
+  end
+
+#+END_SRC
