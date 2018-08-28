@@ -18,7 +18,7 @@ live_loop : do
 end
 ```
 
-## xtouch_knobs
+## xtouch_knobs.rb
 Set up to get  [Behringer xtouch mini](https://www.google.com/search?q=behringer+xtouch+mini midi controller. Load with:
 `run_file "#{base_dir}xtouch_knobs.rb"`
 
@@ -30,8 +30,8 @@ live_loop :bd do
 end
 ```
 
-## xtouch_buttons
-<under development>
+## xtouch_buttons.rb
+under development
 
-## sonic_pi_notebook
+## sonic_pi_notebook.rb
 An Emacs `org-mode` notebook where I keep track of my sessions, nascent songs, and anything else I want to keep track of.
