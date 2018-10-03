@@ -1,5 +1,5 @@
 # key: fx ix
 # point_line: 0
-# point_index: 58
+# point_index: 19
 # --
-with_fx :ixi_techno, mix: range(0.125,1,0.125).ramp.tick(:)  do
+with_fx :ixi_techno do

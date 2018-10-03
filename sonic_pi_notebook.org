@@ -30,7 +30,6 @@
 #+END_SRC
 * xtouch configs
 ** xtouch: template
-
 ** xtouch: slider
 ** xtouch sequencer v1
 #+BEGIN_SRC ruby
@@ -4618,5 +4617,50 @@ end
 
     sleep 8
   end
+
+#+END_SRC
+** <2018-10-02 Tue> timedrum loops
+#+BEGIN_SRC ruby
+  live_loop :time do
+    4.times do |m|
+      use_synth :fm
+      chrd = chord(chord(:C3, :minor7)[m], :major7)
+      with_fx :echo, phase: 1, mix: 0.1 do
+        4.times do |n|
+          if n == 0
+            play chrd[n], amp: get(:knob_18_state),
+                 decay:  1,
+                 depth: 2*get(:knob_11_state),
+                 divisor: 4*get(:knob_12_state)
+          end
+
+          sleep 0.25
+
+          if n%4 == 0
+            play chrd[n], amp: get(:knob_17_sate),
+                 decay:  0.125,
+                 depth: 2*get(:knob_11_state),
+                 divisor: 4*get(:knob_12_state)
+          end
+          sleep 0.25
+
+        end
+      end
+    end
+
+  end
+
+  live_loop :drum, sync: :time do
+    8.times do |n|
+      with_fx :compressor, amp: 0.75 do
+        sample :loop_safari, onset: n, amp: 1
+      end
+
+      sleep 1
+    end
+
+  end
+
+
 
 #+END_SRC
