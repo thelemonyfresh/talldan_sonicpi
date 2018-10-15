@@ -4664,3 +4664,87 @@ end
 
 
 #+END_SRC
+** <2018-10-03 Wed> animation, djing thoughts
+try to play sonic pi like a dj first
+
+need to be able to load track and adjust to a specific time for launch, maybe even launch live? can you do this via midi controller?
+
+sync if already playing
+
+how to deal with BPM effectively? is there a way we can ignore it unless we need it?
+
+animations:
+
+what I need is a way to step certain classes of animation (corresponding to css classes?!)
+
+so... select a certain class of item and subject it to animation
+** <2018-10-09 Tue> message was not understood
+#+BEGIN_SRC ruby
+  # is this code for something?
+
+  # Standard Incantation
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  load_snippets("#{base_dir}snippets/")
+
+  use_bpm 125
+
+
+  live_loop :under do
+
+    with_fx :gverb, mix: 0.15 do
+      #with_fx :slicer, phase: 1 do
+      with_fx :krush, mix: 0 do
+        #sample :ambi_piano, amp: 0.4
+      end
+      #end
+    end
+
+
+    sleep 8
+  end
+
+  live_loop :where, sync: :under do
+    16.times do |n|
+      sample :loop_amen, amp: range(0.1,0.7,0.1).ramp.tick(:amens), cutoff: 1, beat_stretch: 4, onset: n if n%2 == 0
+      sleep 0.25
+    end
+  end
+
+  live_loop :voices, sync: :under do
+    stop
+    use_synth :pretty_bell
+    in_thread do
+      c = scale(:C6, :major_pentatonic)
+      16.times do
+        if one_in(10)
+          play c.choose, amp: 0.5,
+            attack: 0.05, decay: 0.05, sustain: 0.1, release: 0.05
+          sleep 0.25
+        end
+
+      end
+    end
+
+
+    sleep 8
+  end
+
+  # nin -- ghost album 33/32
+
+  live_loop :past, sync: :under do
+    stop
+    c = chord(:C2, :major7)
+    cs = [c[0],c[1],c[0],(note(c[3]))]
+    in_thread do
+      4.times do |n|
+        use_synth :beep
+        play cs[n], amp: 0.6,
+          attack: 0.5, attack_level: 1, decay: 1, sustain: 0.25, release: 2
+        sleep 4
+      end
+    end
+
+    sleep 16
+
+  end
+#+END_SRC
