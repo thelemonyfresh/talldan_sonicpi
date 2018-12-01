@@ -2234,7 +2234,7 @@ end
 
 
 #+END_SRC
-**  <2017-10-03 Tue> Habanera
+** <2017-10-03 Tue> Habanera
 #+BEGIN_SRC ruby
   live_loop :habanera do
     use_synth :fm
@@ -4747,4 +4747,374 @@ so... select a certain class of item and subject it to animation
     sleep 16
 
   end
+#+END_SRC
+** <2018-10-23 Tue> visualization ideas
+ball with changing radius:
+https://codepen.io/equinusocio/pen/jezBdZ
+
+rotating image chunks
+https://codepen.io/jakealbaugh/pen/EdLKea
+** <2018-10-28 Sun> xtouch synthesizer keyboard
+#+BEGIN_SRC ruby
+  # Standard Incantation
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  load_snippets("#{base_dir}snippets/")
+  #run_file "#{base_dir}xtouch_knobs.rb"
+
+  use_bpm 120
+
+  set(:song_note_name, :C2)
+  set(:song_key, :major)
+
+
+  live_loop :knob_control_synth do
+    sync "/midi/x-touch_mini/1/11/control_change"
+  end
+
+  xtouch_channel = 1
+
+  range(1,19).each do |n|
+    knob_state = "knob_#{n.to_i}_state".to_sym
+    puts "#{knob_state} -- #{get(knob_state)}"
+    set(knob_state, 0) if get(knob_state).nil?
+  end
+
+  live_loop :xtouch_knobs do
+    use_real_time
+    midi_num, val = sync "/midi/x-touch_mini/#{xtouch_channel}/11/control_change"
+
+    knob_state = "knob_#{midi_num}_state".to_sym
+
+    knob_synth = "synth_#{midi_num}".to_sym
+
+    unless get(knob_synth).nil?
+      if midi_num == 11
+        control get(knob_synth), amp: get(knob_state), amp_slide: 0.01
+      elsif midi_num == 12
+        control get(knob_synth), detune: 12*get(knob_state), detune_slide: 0.01
+      elsif midi_num == 13
+        control get(knob_synth), amp: get(knob_state), amp_slide: 0.01
+      elsif midi_num == 14
+        control get(knob_synth), pulse_width: get(knob_state), pulse_width_slide: 0.01
+      end
+
+    end
+
+
+    set knob_state, (val/127.0)
+  end
+
+  live_loop :xtouch_keyboard do
+    use_real_time
+    midi_num, val = sync "/midi/x-touch_mini/1/11/note_on"
+
+    note_num = midi_num - 32
+    scl = scale(get(:song_note_name), get(:song_key))
+    keys = scl + scl.map{ |n| n + 12}
+    puts keys
+    puts note_num
+    control get(:synth_11), note: keys[note_num]
+    control get(:synth_13), note: keys[note_num]
+  end
+
+  live_loop :syths_players do
+    l = 32.0
+    nt = chord(get(:song_note_name), get(:song_key)).choose
+
+    xtouch_synth(nt,l)
+
+    sleep 32
+  end
+
+
+  define :xtouch_synth do |nt, l|
+
+    ## Change these synths, then play with xtouch
+
+    # dsaw
+    dsaw_adsr = {attack: 0.01*l, decay: 0.49*l, sustain: 0.25*l, release: 0.25*l}
+
+    use_synth :dtri
+    sth = play nt, dsaw_adsr, amp: get(:knob_11_state),
+      detune: 12*get(:knob_12_state)
+    set(:synth_11, sth)
+    set(:synth_12, sth)
+
+    # pulse
+    #dpulse_adsr = {attack: 0.01*l, decay: 0.49*l, sustain: 0.25*l, release: 0.25*l}
+    dpulse_adsr = {attack: 0.01, sustain: 0.99*l}
+
+    use_synth :dpulse
+    sth_2 = play nt, dpulse_adsr, amp: get(:knob_13_state),
+      pulse_width: get(:knob_14_state)
+    set(:synth_13, sth_2)
+    set(:synth_14, sth_2)
+
+
+  end
+
+
+
+#+END_SRC
+** <2018-11-10 Sat> xtouch midi keyboard
+#+BEGIN_SRC ruby
+  # Standard Incantation
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  load_snippets("#{base_dir}snippets/")
+  run_file "#{base_dir}xtouch_knobs.rb"
+
+  use_bpm 120
+
+  set(:song_note_name, :C2)
+  set(:song_key, :major)
+
+
+  live_loop :knob_control_synth do
+    sync "/midi/x-touch_mini/1/11/control_change"
+  end
+
+  xtouch_channel = 1
+
+  range(1,19).each do |n|
+    knob_state = "knob_#{n.to_i}_state".to_sym
+    puts "#{knob_state} -- #{get(knob_state)}"
+    set(knob_state, 0) if get(knob_state).nil?
+  end
+
+  live_loop :xtouch_knobs do
+    use_real_time
+    midi_num, val = sync "/midi/x-touch_mini/#{xtouch_channel}/11/control_change"
+
+    knob_state = "knob_#{midi_num}_state".to_sym
+
+    knob_synth = "synth_#{midi_num}".to_sym
+
+    unless get(knob_synth).nil?
+      if midi_num == 11
+        control get(knob_synth), amp: get(knob_state), amp_slide: 0.01
+      elsif midi_num == 12
+        control get(knob_synth), detune: 12*get(knob_state), detune_slide: 0.01
+      elsif midi_num == 13
+        control get(knob_synth), amp: get(knob_state), amp_slide: 0.01
+      elsif midi_num == 14
+        control get(knob_synth), pulse_width: get(knob_state), pulse_width_slide: 0.01
+      end
+
+    end
+
+
+    set knob_state, (val/127.0)
+  end
+
+  live_loop :xtouch_keyboard do
+    use_real_time
+    midi_num, val = sync "/midi/x-touch_mini/1/11/note_on"
+
+    note_num = midi_num - 32
+    scl = scale(get(:song_note_name), get(:song_key))
+    keys = scl + scl.map{ |n| n + 12}
+    puts keys
+    puts note_num
+    control get(:synth_11), note: keys[note_num]
+    control get(:synth_13), note: keys[note_num]
+  end
+
+  live_loop :news do
+    l = 32.0
+    nt = chord(get(:song_note_name), get(:song_key)).choose
+
+    at [0, 8, 16,24] do
+      xtouch_synth(nt,7)
+    end
+
+
+    sleep 32
+  end
+
+  live_loop :sumpt, sync: :news do
+    with_fx :flanger, depth: 9 do
+      sample :perc_snap, amp: 0.5
+    end
+
+    sleep 0.5
+    sample :sn_zome, decay: 0.5
+    sleep 0.5
+  end
+
+
+  define :xtouch_synth do |nt, l|
+
+    ## Change these synths, then play with xtouch
+
+    # dsaw
+    dsaw_adsr = {attack: 0.01*l, decay: 0.49*l, sustain: 0.25*l, release: 0.25*l}
+
+    with_fx :lpf, cutoff: 100 do
+      use_synth :fm
+      sth = play nt, dsaw_adsr, amp: get(:knob_11_state),
+        detune: 12*get(:knob_12_state)
+      set(:synth_11, sth)
+      set(:synth_12, sth)
+
+      # pulse
+      #dpulse_adsr = {attack: 0.01*l, decay: 0.49*l, sustain: 0.25*l, release: 0.25*l}
+      dpulse_adsr = {attack: 0.01, sustain: 0.99*l}
+
+      use_synth :dpulse
+      sth_2 = play nt, dpulse_adsr, amp: get(:knob_13_state),
+        pulse_width: get(:knob_14_state)
+      set(:synth_13, sth_2)
+      set(:synth_14, sth_2)
+    end
+
+  end
+
+
+
+#+END_SRC
+** <2018-11-10 Sat> zev session notes
+#+BEGIN_SRC ruby
+  # ZEV SESSION
+
+  # 95bpm, 105bpm, 120bpm
+
+  # some owen cuts
+
+  # tng jam
+
+  # professions rap
+
+  # some generic beats
+
+  # some simple scales with metronome
+
+  # a jam in the style of that horn riff from short skirt
+
+  #
+
+
+#+END_SRC
+** <2018-11-10 Sat> synth composition
+#+BEGIN_SRC ruby
+  # synth composition
+
+  new_synth(:E2, 0.5)
+
+  define :new_synth do |nt, length|
+    synths = {
+      fm: {
+        amp: 0.5,
+        attack: 0.125*length, decay: 0.5*length, sustain: 0*length, release: 0.375*length
+      },
+      tri: {
+        amp: 0.5
+      }
+    }
+
+    play_synth_list(synths)
+
+
+
+  end
+
+  define :play_synth_list do |synth_list, nt|
+    synth_list.keys.each do |synth_name|
+      use_synth(synth_name)
+
+
+      play nt, amp: 0.5
+    end
+  end
+
+#+END_SRC
+** <2018-11-10 Sat> is this code for something tari jam
+#+BEGIN_SRC ruby
+  # is this code for something?
+
+  # Standard Incantation
+  base_dir = "/Users/daniel/recording/talldan_sonicpi/"
+  load_snippets("#{base_dir}snippets/")
+
+  use_bpm 125
+
+
+  live_loop :under do
+
+    with_fx :gverb, mix: 0.15 do
+      with_fx :slicer, phase: 0.5 do
+        with_fx :krush, mix: 0.5 do
+          sample :ambi_piano, amp: 0.2
+        end
+      end
+    end
+
+
+    sleep 8
+  end
+
+  live_loop :where, sync: :under do
+    16.times do |n|
+      sample :loop_amen, amp: 0.3, cutoff: 130.0*get(:knob_18_state), beat_stretch: 4, onset: n if n%2 == 0
+      sleep 0.25
+    end
+  end
+
+  live_loop :voices, sync: :under do
+    stop
+    use_synth :pretty_bell
+    in_thread do
+      c = scale(:C6, :major_pentatonic)
+      16.times do |n|
+        if n%8 == 0
+          play c[n], amp: 0.10,
+            attack: 0.05, decay: 0.05, sustain: 0.1, release: 0.05
+          sleep 0.25
+        end
+
+      end
+    end
+
+    sleep 8
+  end
+
+  # nin -- ghost album 33/32
+
+  live_loop :past, sync: :under do
+    c = chord(:C2, :major7)
+    cs = [c[0],c[1],c[0],(note(c[3]))]
+
+    in_thread do
+      4.times do |n|
+        use_synth :beep
+        s = play cs[n], amp: 0.3, cutoff: 130, note_slide: 4,
+          attack: 0.5, attack_level: 1, decay: 1, sustain: 0.25, release: 2
+        control s, note: (cs[n+1])
+        sleep 4
+      end
+    end
+
+    sleep 16
+
+  end
+#+END_SRC
+** <2018-11-28 Wed> notes with lenghts
+#+BEGIN_SRC ruby
+  # . or nothing means quarter note
+  # o means half-note
+  # w means whole note
+  # - means eigth note
+  # -- means sixteenth
+  # --- means thirty-second note
+
+  # eg :C2. :C3o :B2--, :D-
+
+
+#+END_SRC
+** <2018-11-28 Wed> ramps for drops
+#+BEGIN_SRC ruby
+  define :four_step_ramp do |symbol|
+    (range(0,1,0.25) + [1]).ramp.look(symbol)
+  end
+
+  tick(:symbol)
 #+END_SRC

@@ -2,7 +2,7 @@
 # XTOUCH KNOBS
 #
 
-xtouch_channel = 1
+xtouch_channel = 2
 
 # set initial values for knob_x_state to zero if nil
 
@@ -12,5 +12,5 @@ live_loop :xtouch_knobs do
 
   knob_state = "knob_#{midi_num}_state".to_sym
 
-  set knob_state, (val/127.0)
+  set knob_state, (val / 127.0)
 end
