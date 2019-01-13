@@ -5118,3 +5118,21 @@ https://codepen.io/jakealbaugh/pen/EdLKea
 
   tick(:symbol)
 #+END_SRC
+** <2018-12-12 Wed> vizualization ideas
+particle flow:
+https://codepen.io/seanfree/pen/PxJyEW
+
+shape outside polygon:
+https://codepen.io/enxaneta/pen/jrpkBG
+
+shooting stars:
+https://codepen.io/YusukeNakaya/pen/XyOaBj
+
+generative artistry:
+https://codepen.io/collection/XkyjLN/
+
+smoke svg filter:
+https://codepen.io/rafaelcastrocouto/pen/rqbovJ
+
+neural beatbox:
+https://codepen.io/naotokui/pen/NBzJMW
