@@ -2,7 +2,7 @@
 # XTOUCH KNOBS
 #
 
-xtouch_channel = 2
+xtouch_channel = 0
 
 # Initialize ':knob_X_state' variables
 24.times do |n|
