@@ -1,5 +1,24 @@
-unless get(:nm_config_defined)
+live_loop :left_control do
+  note, val = sync "/midi/dj2go2/1/1/control_change"
 
+
+  if note == 9
+    norm_val = 2*(127/2.0 - val)/127.0
+    set(:fader_l_state, norm_val)
+  elsif note == 22
+    norm_val = val/127.0
+    set(:knob_l_state, norm_val)
+  end
+
+end
+
+
+
+####
+  #  4 loop trigger buttons
+####
+
+unless get(:nm_config_defined)
 
   set(:nm_config_defined, true)
 

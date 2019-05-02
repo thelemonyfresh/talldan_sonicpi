@@ -5136,3 +5136,7 @@ https://codepen.io/rafaelcastrocouto/pen/rqbovJ
 
 neural beatbox:
 https://codepen.io/naotokui/pen/NBzJMW
+** <2019-05-01 Wed> work to do on sonic pi
+
+Bug:
+- when open prefs it resizes the buffers but doesn't go back
