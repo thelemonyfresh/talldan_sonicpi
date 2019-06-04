@@ -1,114 +1,102 @@
-live_loop :left_control do
+##
+# L/R "grouping" knob
+##
+
+
+set(:A, 0) if get(:A).nil?
+set(:B, 0) if get(:B).nil?
+
+live_loop :nm_group_knobs_A do
   note, val = sync "/midi/dj2go2/1/1/control_change"
 
-
-  if note == 9
-    norm_val = 2*(127/2.0 - val)/127.0
-    set(:fader_l_state, norm_val)
-  elsif note == 22
-    norm_val = val/127.0
-    set(:knob_l_state, norm_val)
+  if note == 22
+    norm_val = (val/127.0)
+    set(:A, norm_val)
   end
+end
 
+live_loop :nm_group_knobs_B do
+  note, val = sync "/midi/dj2go2/1/2/control_change"
+
+  if note == 22
+    norm_val = (val/127.0)
+    set(:B, norm_val)
+  end
+end
+
+####
+#  4 loop trigger buttons
+####
+
+#
+# Helper Methods
+#
+
+define :playing_key do |button|
+  "#{button}".to_sym
+end
+
+define :note_from_button do |button|
+  button.to_s[1].to_i
+end
+
+define :channel_from_button do |button|
+  channel = button.to_s[0]
+  return 5 if channel == 'A'
+  return 6 if channel == 'B'
 end
 
 
+#
+# Left Bank (A)
+#
 
-####
-  #  4 loop trigger buttons
-####
+live_loop :nm_detect_loops_a do
+  use_real_time
+  note, val = sync "/midi/dj2go2/1/5/note_on"
+  button = "A#{note}".to_sym
 
-unless get(:nm_config_defined)
-
-  set(:nm_config_defined, true)
-
-  #
-  # Helper Methods
-  #
-
-  define :playing_key do |button|
-    "#{button}_playing".to_sym
+  if get(playing_key(button))
+    set playing_key(button), false
+    val = 0
+  else
+    set playing_key(button), true
+    val = 2
   end
 
-  define :pending_key do |button|
-    "#{button}_pending".to_sym
+  midi_note_on note, val, channel: channel_from_button(button)
+end
+
+#
+# Right Bank (B)
+#
+
+live_loop :nm_detect_loops_b do
+  use_real_time
+  note, val = sync "/midi/dj2go2/1/6/note_on"
+  button = "B#{note}".to_sym
+
+  if get(playing_key(button))
+    set playing_key(button), false
+    val = 0
+  else
+    set playing_key(button), true
+    val = 2
   end
 
-  define :restart_cue do |button|
-    "#{button}_restart".to_sym
-  end
+  midi_note_on note, val, channel: channel_from_button(button)
+end
 
-  define :note_from_button do |button|
-    button.to_s[1].to_i
-  end
+## use other light brightness to indicate something is hitting a call to nm(:A1), e.g.
+# registering if they are already being called or not in use yet
+# or use it as third level for toggle
 
-  define :channel_from_button do |button|
-    channel = button.to_s[0]
-    return 5 if channel == 'A'
-    return 6 if channel == 'B'
-  end
+#
+# sync method for loops
+#
 
-  #
-  # Left Bank (A)
-  #
+define :nm do |button|
+  use_real_time
 
-  live_loop :nm_detect_loops_a do
-    use_real_time
-    note, val = sync "/midi/dj2go2/1/5/note_on"
-    button = "A#{note}"
-
-    if get(playing_key(button)) || get(pending_key(button))
-      set playing_key(button), false
-      set pending_key(button), false
-      val = 0
-    else
-      set pending_key(button), true
-      cue restart_cue(button)
-      val = 1
-    end
-
-    midi_note_on note, val, channel: channel_from_button(button)
-  end
-
-  #
-  # Right Bank (B)
-  #
-
-  live_loop :nm_detect_loops_b do
-    use_real_time
-    note, val = sync "/midi/dj2go2/1/6/note_on"
-    button = "B#{note}"
-
-    if get(playing_key(button)) || get(pending_key(button))
-      set playing_key(button), false
-      set pending_key(button), false
-      val = 0
-    else
-      set pending_key(button), true
-      cue restart_cue(button)
-      val = 1
-    end
-
-    midi_note_on note, val, channel: channel_from_button(button)
-  end
-
-  #
-  # sync method for loops
-  #
-
-  define :nm_sync do |button, sync_key|
-    use_real_time
-
-    sync restart_cue(button) unless get(playing_key(button))
-
-    if get(pending_key(button))
-      puts "I'm abt to wait for sync key"
-      sync sync_key
-      puts "now I'm after"
-      set pending_key(button), false
-      set playing_key(button), true
-      midi_note_on note_from_button(button), 127, channel: channel_from_button(button)
-    end
-  end
-
+  return get(playing_key(button))
 end

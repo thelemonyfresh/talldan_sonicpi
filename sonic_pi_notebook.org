@@ -5140,3 +5140,73 @@ https://codepen.io/naotokui/pen/NBzJMW
 
 Bug:
 - when open prefs it resizes the buffers but doesn't go back
+- sometimes the highlight gets stuck -- when moving text up or down
+- better debugging loaded files (does not give proper references)
+*** <2019-05-13 Mon> in_thread post notes: collection of best practices for efficiency?
+
+- in ableton we just bounce down tracks -> effective workflows for doing this smoothly, on-the fly (recording and storing audio files on the fly)
+-
+
+
+
+snippets that are non-standard?
+
+having to restart -- a good way of troubleshooting
+
+how to recover fast when accidentally starting a loop out of sync?
+
+tick and look inside of at...
+*** introduction:
+classify myself as a world percussionist. Most of my professional experience is in Japanese Taiko drumming (taikoproject), which I have been playing for more than a decade,
+dabbled with DIY electronic drum kits. These days make a lot of music with Ableton (mostly live jamming, but you can out some early recordings here...)
+ Sonic Pi in 2014 or 15.
+started using seriously in 2017, started jamming with people, integrating with Ableton in 2017.
+
+** <2019-05-15 Wed> jay bassline
+#+BEGIN_SRC ruby
+
+  define :jay_bassline do
+    falling_text 'jay'
+    in_thread do
+      with_fx :pan, pan: 0.25 do
+        with_fx :flanger, depth: 10 do
+          with_fx :level, amp: 1.5 do
+            with_fx :compressor do
+              sample haus_samps, 'jay_new_bassline', amp: 0.5#, finish: 0.95
+            end
+          end
+        end
+      end
+    end
+  end
+#+END_SRC
+** <2019-05-15 Wed> deep house synth save
+#+BEGIN_SRC ruby
+
+  live_loop :deep_house_bassline, sync: :out do
+    #deep_house_bass_pattpfern(
+    melody = {
+      notes: scale(:D3, :major).pick(5),
+      times: ring(0,1,2,3,4,5,6,7),
+      durations: ring(0.25, 1).pick(5)
+    }
+
+    puts "Melody times: #{melody[:times]}"
+    dhb_pattern(melody)
+
+    sleep 8
+  end
+
+  # give hash: {  notes: ring(:C,:A,:D...),
+  #             times: ring(1,2,1,1,...},
+  #             durations: ring(0.5, 0.5, 0.25,...)
+
+  define :dhb_pattern do |melody|
+    in_thread do
+      at melody[:times] do |time|
+        deep_house_bass(melody[:notes].look, melody[:durations].look)
+      end
+      sleep melody[:times].max
+    end
+  end
+#+END_SRC
