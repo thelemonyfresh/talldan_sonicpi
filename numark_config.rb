@@ -7,20 +7,22 @@ set(:A, 0) if get(:A).nil?
 set(:B, 0) if get(:B).nil?
 
 live_loop :nm_group_knobs_A do
+  use_real_time
   note, val = sync "/midi/dj2go2/1/1/control_change"
 
-  if note == 22
+  if note == 9
     norm_val = (val/127.0)
-    set(:A, norm_val)
+    set(:A, 1 - norm_val)
   end
 end
 
 live_loop :nm_group_knobs_B do
+  use_real_time
   note, val = sync "/midi/dj2go2/1/2/control_change"
 
-  if note == 22
+  if note == 9
     norm_val = (val/127.0)
-    set(:B, norm_val)
+    set(:B, 1 - norm_val)
   end
 end
 
