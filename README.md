@@ -22,7 +22,7 @@ live_loop : do
 end
 ```
 
-## xtouch_knobs.rb
+## xtouch_knobs.rb (no longer maintained)
 Set up to use [Behringer xtouch mini](https://www.google.com/search?q=behringer+xtouch+mini) midi controller for live coding. Load with:
 
 ``` ruby
@@ -36,9 +36,6 @@ live_loop :bd do
   sample :bd_808, amp: get(:knob_1_state)
 end
 ```
-
-## xtouch_buttons.rb
-under development
 
 ## sonic_pi_notebook.rb
 An Emacs `org-mode` notebook where I keep track of my sessions, nascent songs, and anything else I want to jot down.
