@@ -5143,6 +5143,7 @@ Bug:
 - sometimes the highlight gets stuck -- when moving text up or down... how to repo?
 - better debugging loaded files (does not give proper references)
 - some way to see what file the error happened in if loaded?
+- hitting enter doesn't carry to the proper indentation level
 
 *** <2019-05-13 Mon> in_thread post notes: collection of best practices for efficiency?
 
