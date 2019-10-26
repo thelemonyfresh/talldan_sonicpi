@@ -5213,3 +5213,121 @@ started using seriously in 2017, started jamming with people, integrating with A
     end
   end
 #+END_SRC
+** <2019-07-22 Mon> save numark_sampler
+#+BEGIN_SRC ruby
+  #
+  # haustothehaus
+  #
+
+  use_bpm 130
+
+  live_loop :garage do
+    set(:garage_amt, 0.26)
+    set(:garage_knob, 120)
+
+    #windy_melody
+    #tires
+    #roses
+
+   # windy_melody
+
+
+
+    sleep 32
+  end
+
+  live_loop :sixteen, sync: :garage do
+    sample '/Users/daniel/recording/haus_samples', 'indigo',
+      rate: 0.9950629921259843,
+      start: 0.049,
+      finish: 0.1045
+    #bassment
+
+   #raise
+    sleep 16
+  end
+
+  live_loop :eight, sync: :garage do
+    with_fx :bpf, centre: 40, centre_slide: 4 do |fx|
+      in_thread do
+        control fx, centre: 120
+        sleep 4
+        control fx, centre: 80
+      end
+
+      4.times do
+        sample '/Users/daniel/recording/haus_samples', 'indigo', amp: 0,
+          rate: 0.9160629921259843,
+          start: 0.148,
+          finish: 0.2105
+        sleep 2
+      end
+    end
+
+    ##| sample haus_samps, 'indigo',
+    ##|     start: 0.0345,
+    ##|     finish: 0.103
+    #garage_door
+    #car_door_close
+
+
+    #sample_slicer(haus_samps, 'indigo')
+
+    #sample_slicer(haus_samps, 'indigo')
+  end
+
+  live_loop :four, sync: :garage do
+    #numark_sampler(haus_samps, 'indigo')
+
+  sample '/Users/daniel/recording/haus_samples', 'indigo', amp: 0,
+          rate: 1,
+          start: 0.353,
+          finish: 0.365
+
+    sleep 4
+  end
+
+  live_loop :two, sync: :garage do
+    sleep 1
+
+    numark_sampler(haus_samps, 'indigo')
+
+    sample '/Users/daniel/recording/haus_samples', 'indigo', amp: 0,
+      rate: 1.0,
+      start: 0.094,
+      finish: 0.1125
+    sleep 1
+  end
+
+  live_loop :one, sync: :garage do
+    gravel_bd
+    #sample_slicer(haus_samps, 'indigo')
+    if tick % 2 == 0
+      sample haus_samps, 'neu_haus_keys',
+        start: 0.276,
+        finish: 0.2855
+    end
+
+    sleep 0.5
+    haus_keys
+
+
+    sleep 0.5
+  end
+
+  ##| define :raise do
+  ##|   in_thread do
+  ##|     17.times do |n|
+  ##|       sleep 0.5
+  ##|       rt = [14,15,17].include?(n) ? 0.94 : 1
+  ##|       puts "rt: #{rt}"
+  ##|       sample '/Users/daniel/recording/haus_samples', 'indigo',
+  ##|         rate: rt,
+  ##|         start: 0.4065,
+  ##|         finish: 0.4215
+  ##|       sleep 0.5
+  ##|     end
+  ##|   end
+  ##| end
+#+END_SRC
+** <2019-10-25 Fri>
