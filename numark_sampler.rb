@@ -33,7 +33,6 @@ live_loop :cue_a_loop do
   current = get(:cue_a) || 0.5
   inc = 0.0005
   if note == 6 #&& tick % 4 == 0
-    puts "HERE IN DEBUGGER"
     change = val == 1 ? inc : -1 * inc
 
     new_total = (current + change).round(4)
