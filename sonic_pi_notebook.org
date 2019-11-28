@@ -6178,3 +6178,86 @@ end
 #+END_SRC
 
 a triumphant triumverate of minds
+** <2019-11-27 Wed> garage jam
+#+BEGIN_SRC ruby
+  # Standard Incantation
+  base_dir = '/Users/daniel/src/talldan_sonicpi/'
+  #load_snippets("#{base_dir}snippets/")
+  #run_file "#{base_dir}xtouch_knobs.rb"
+  #run_file "#{base_dir}samples.rb"
+  #run_file "#{base_dir}numark_config.rb"
+  run_file "#{base_dir}numark_sampler.rb"
+  # osc
+  use_osc '169.254.168.198', 7400
+
+  # ############## #
+
+  # haustothehaus
+
+  haus_dir = '/Users/daniel/src/haustothehaus/'
+  haus_samps = '/Users/daniel/recording/haus_samples'
+  #run_file "#{haus_dir}toolbox.rb"
+  #run_file "#{haus_dir}songs/shared.rb"
+
+  use_bpm 130
+
+  live_loop :garage do
+    #numark_sampler_a(haus_samps, 'alibi')
+
+    unless tick(:counter) % 8 == 0
+      with_fx :bpf, centre: range(50,120,10).mirror.tick do
+        sample '/Users/daniel/recording/haus_samples', 'alibi', amp: 0.7,
+          rate: 1.0,
+          start: 0.2195,
+          finish: 0.282492125984252
+      end
+    else
+            sample '/Users/daniel/recording/haus_samples', 'alibi', amp: 0.7,
+          rate: 1.0,
+          start: 0.3195,
+          finish: 0.382492125984252
+    end
+
+
+    sleep 1
+
+    sample '/Users/daniel/recording/haus_samples', 'car',
+      rate: 2.0,
+      start: 0.1655,
+      finish: 0.17573622047244095
+    sleep 1
+  end
+
+  live_loop :eighst, sync: :garage do
+
+    sample '/Users/daniel/recording/haus_samples', 'car',
+      rate: 2.0,
+      start: 0.0185,
+      finish: 0.04527165354330709
+
+    sleep 8
+  end
+
+  live_loop :one, sync: :garage do
+    gravel_bd
+    sleep 1
+  end
+
+  live_loop :half, sync: :garage do
+    haus_keys
+    sleep 0.5
+  end
+
+  live_loop :eight, sync: :garage do
+
+    sleep 8
+  end
+
+  define :hold do |times, key|
+    knit(false,times,true,1).ramp.tick(key)
+  end
+
+
+
+
+#+END_SRC
