@@ -1,8 +1,8 @@
 # key: ll 32
 # point_line: 0
-# point_index: 21
+# point_index: 11
 # --
-live_loop :thirty_two do
+live_loop : do
 
   sleep 32
 end

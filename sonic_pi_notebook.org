@@ -5613,7 +5613,6 @@ started using seriously in 2017, started jamming with people, integrating with A
 
 
 #+END_SRC
-** <2019-11-05 Tue>
 ** <2019-11-10 Sun> sorting algorithms
 
 #+BEGIN_SRC ruby

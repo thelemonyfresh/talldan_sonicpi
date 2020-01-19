@@ -1,8 +1,8 @@
 # key: ll 64
 # point_line: 0
-# point_index: 21
+# point_index: 11
 # --
-live_loop :sixty_four do
+live_loop : do
 
   sleep 64
 end
