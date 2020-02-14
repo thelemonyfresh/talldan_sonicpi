@@ -3,11 +3,11 @@ channel = 0
 # add optional params hash that gives initial values
 define :numark_sampler_a do |collection, sample|
   in_thread do
-    rate = tune_by(get(:rate_a))  # multiple this by array of steps?
+    rate = tune_by(get(:rate_a))  # multiple this by array of steps
 
     if get(:playing_a)
       start = get(:cue_a)
-      sample_length = (get(:length_a_coarse) + 0.1 * get(:length_a_fine))
+      sample_length= (get(:length_a_coarse) + 0.1*get(:length_a_fine))
       finish = start + sample_length < 1 ? start + sample_length : 1
       sample collection, sample,
         rate: rate,
@@ -15,7 +15,7 @@ define :numark_sampler_a do |collection, sample|
         finish: finish
 
 
-      midi_note_on 0,2, channel: 1 if get(:playing_a) # set play button
+      midi_note_on 0,2, channel: 1 if get(:playing_a)# set play button
 
       midi_note_on 1,2, channel: 1 # flash the cue
       sleep 0.125
@@ -62,14 +62,14 @@ define :numark_sampler_b do |collection, sample|
 end
 
 define :tune_by do |rate|
-  0.25*rate**2 + 0.75*rate + 1
-  #rate_note(rate)
-  #rate < 0 ? 1.0 / rate_note(rate) : rate_note(rate)
+  rate < 0 ? 1.0 / rate_note(rate) : rate_note(rate)
 end
 
 define :rate_note do |rate|
   13.times.map { |n| 2**(n/12.0) }[rate*12]
 end
+
+#midi_note_on 1,0
 
 #
 # Cue listeners
@@ -78,12 +78,13 @@ end
 # convert these to just one side cue with knob
 #
 
-
+set(:cue_b, 0.5) unless get(:cue_b)
+set(:cue_a, 0.5) unless get(:cue_a)
 
 live_loop :cue_a_loop do
   use_real_time
   note, val = sync "/midi/dj2go2/#{channel}/1/control_change"
-
+  puts "CUeING A"
   current = get(:cue_a) || 0.5
   inc = 0.0005
   if note == 6 #&& tick % 4 == 0
@@ -182,6 +183,7 @@ live_loop :rate_slider_b do
     set(:rate_b, normed_val.round(3))
   end
 end
+
 
 #
 # LENGTH LISTENERS
@@ -303,23 +305,20 @@ end
 # INITIALIZE
 #
 
-# defonce :initialize do
-#   set(:playing_a, false)
-#   set(:cue_a, 0)
-#   set(:rate_a, 1)
-#   set(:rate_b, 1)
-#  # set(:playing_a, false)
+defonce :initialized, override: true do
+  set(:playing_a, false)
+  set(:cue_a, 0)
+  set(:rate_a, 1)
+  set(:rate_b, 1)
+                           set(:playing_a, false)
 
-#   set(:cue_b, 0.5) unless get(:cue_b)
-#   set(:cue_a, 0.5) unless get(:cue_a)
+  # turn off the lights
+  midi_note_on 0,0, channel: 1
+  midi_note_on 1,0, channel: 1
+  midi_note_on 2,0, channel: 1
+end
 
-#   puts "intializing"
-#   # turn off the lights
-#   midi_note_on 0,0, channel: 1
-#   midi_note_on 1,0, channel: 1
-#   midi_note_on 2,0, channel: 1
-
-# end
+initialized
 
 
 #
