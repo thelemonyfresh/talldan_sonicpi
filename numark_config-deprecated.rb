@@ -1,30 +1,50 @@
+#
+# Rate sliders
+#
+
+
+
 ##
-# L/R "grouping" knob
+# L/R track val FADER
 ##
 
+# live_loop :nm_group_knobs_A do
+#   use_real_time
+#   note, val = sync "/midi/dj2go2/1/1/control_change"
 
-set(:A, 0) if get(:A).nil?
-set(:B, 0) if get(:B).nil?
+#   norm_val = (val/127.0)
 
-live_loop :nm_group_knobs_A do
-  use_real_time
-  note, val = sync "/midi/dj2go2/1/1/control_change"
+#   if note == 9
+#     track = get(:A)
+#       set(track, 1 - norm_val)
 
-  if note == 9
-    norm_val = (val/127.0)
-    set(:A, 1 - norm_val)
-  end
-end
+#   elsif note == 22
+#     knob_key = "#{get(:A).to_s}_knob".to_sym
+#     synth_key = "#{get(:A).to_s}_knob_fx".to_sym
+#     synth_param = "#{get(:A).to_s}_knob_fx_param".to_sym
+#     control get(synth_key), get(synth_param) => val
+#     set(knob_key, val)
+#   end
+# end
 
-live_loop :nm_group_knobs_B do
-  use_real_time
-  note, val = sync "/midi/dj2go2/1/2/control_change"
+# live_loop :nm_group_knobs_B do
+#   use_real_time
+#   note, val = sync "/midi/dj2go2/1/2/control_change"
 
-  if note == 9
-    norm_val = (val/127.0)
-    set(:B, 1 - norm_val)
-  end
-end
+#   norm_val = (val/127.0)
+
+#   if note == 9
+#     track = get(:B)
+#     set(track, 1 - norm_val)
+
+#   elsif note == 22
+#     knob_key = "#{get(:B).to_s}_knob".to_sym
+#     synth_key = "#{get(:B).to_s}_knob_fx".to_sym
+#     synth_param = "#{get(:B).to_s}_knob_fx_param".to_sym
+#     control get(synth_key), get(synth_param) => val
+#     set(knob_key, val)
+#   end
+# end
 
 ####
 #  4 loop trigger buttons
