@@ -1621,6 +1621,27 @@ last section (everything in): 229557ms
   end
 
 #+END_SRC
+* standard incantation
+#+BEGIN_SRC ruby
+  # Standard Incantation
+  base_dir = '/Users/daniel/src/talldan_sonicpi/'
+  load_snippets("#{base_dir}snippets/")
+  #run_file "#{base_dir}xtouch_knobs.rb"
+  #run_file "#{base_dir}samples.rb" -- not there anymore
+  #run_file "#{base_dir}numark_config-deprecated.rb"
+  run_file "#{base_dir}numark_sampler.rb"
+  # osc
+  use_osc '169.254.168.198', 7400
+
+  # ############## #
+
+  # haustothehaus
+
+  haus_dir = '/Users/daniel/src/haustothehaus/'
+  haus_samps = '/Users/daniel/recording/haus_samples'
+  run_file "#{haus_dir}toolbox.rb"
+  run_file "#{haus_dir}songs/shared.rb"
+#+END_SRC
 * scratch
 ** rhythms
 ** making sounds from synths
