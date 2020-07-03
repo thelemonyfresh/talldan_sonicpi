@@ -1,15 +1,48 @@
 channel = 0
 
-# add optional params hash that gives initial values
-define :numark_sampler_a do |collection, sample|
+#
+# INITIALIZE
+#
+
+defonce :initialized do
+  set(:playing_a, false)
+  set(:playing_b, false)
+  set(:cue_a, 0)
+  set(:cue_b, 0)
+  set(:rate_a, 1)
+  set(:rate_b, 1)
+  set(:length_a_coarse, 0)
+  set(:length_a_fine, 0)
+  set(:length_b_coarse, 0)
+  set(:length_b_fine, 0)
+
+  # turn off the lights
+  midi_note_on 0,0, channel: 1
+  midi_note_on 1,0, channel: 1
+  midi_note_on 2,0, channel: 1
+end
+
+initialized
+
+
+define :numark_sampler_a do |sample|
+  collection = sample[:pack]
+  sample_name = sample[:name]
+  cue_points = sample[:cue_points]
+
+  set(:cue_points_a, cue_points)
+  set(:cue_a, cue_points[0]) unless get(:cue_a)
+
   in_thread do
     rate = tune_by(get(:rate_a))  # multiple this by array of steps
 
     if get(:playing_a)
+
       start = get(:cue_a)
-      sample_length= (get(:length_a_coarse) + 0.1*get(:length_a_fine))
+      sample_length = ((0.99*get(:length_a_coarse) + 0.01)*get(:length_a_fine))
       finish = start + sample_length < 1 ? start + sample_length : 1
-      sample collection, sample,
+
+      sample collection, sample_name,
         rate: rate,
         start: start,
         finish: finish
@@ -25,21 +58,28 @@ define :numark_sampler_a do |collection, sample|
       set(:start_a, start)
       set(:finish_a, finish)
       set(:ss_collection_a, collection)
-      set(:ss_sample_a, sample)
+      set(:ss_sample_a, sample_name)
       set(:ss_rate_a, rate)
     end
   end
 end
 
-define :numark_sampler_b do |collection, sample|
+define :numark_sampler_b do |sample|
+  collection = sample[:pack]
+  sample_name = sample[:name]
+  cue_points = sample[:cue_points]
+
+  set(:cue_points_b, cue_points)
+  set(:cue_b, cue_points[0]) unless get(:cue_b)
+
   in_thread do
     rate = tune_by(get(:rate_b))  # multiple this by array of steps
 
     if get(:playing_b)
       start = get(:cue_b)
-      sample_length= (get(:length_b_coarse) + 0.1*get(:length_b_fine))
+      sample_length =  ((0.99*get(:length_b_coarse) + 0.01)*get(:length_b_fine))
       finish = start + sample_length < 1 ? start + sample_length : 1
-      sample collection, sample,
+      sample collection, sample_name,
         rate: rate,
         start: start,
         finish: finish
@@ -55,14 +95,14 @@ define :numark_sampler_b do |collection, sample|
       set(:start_b, start)
       set(:finish_b, finish)
       set(:ss_collection_b, collection)
-      set(:ss_sample_b, sample)
+      set(:ss_sample_b, sample_name)
       set(:ss_rate_b, rate)
     end
   end
 end
 
 define :tune_by do |rate|
-  rate < 0 ? 1.0 / rate_note(rate) : rate_note(rate)
+  rate < 0 ? -1 * rate_note(rate) : rate_note(rate)
 end
 
 define :rate_note do |rate|
@@ -83,9 +123,9 @@ set(:cue_a, 0.5) unless get(:cue_a)
 
 live_loop :cue_a_loop do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/1/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:1/control_change"
   puts "CUeING A"
-  current = get(:cue_a) || 0.5
+  current = get(:cue_a) || 0
   inc = 0.0005
   if note == 6 #&& tick % 4 == 0
     change = val == 1 ? inc : -1 * inc
@@ -96,17 +136,14 @@ live_loop :cue_a_loop do
     new_total = 1 if new_total >= 1
 
     set(:cue_a, new_total)
-    ##| if one_in(10)
-    ##|   cue_position(get(:cue_a), '#a')
-    ##| end
   end
 end
 
 live_loop :cue_b_loop do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/2/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:2/control_change"
 
-  current = get(:cue_b) || 0.5
+  current = get(:cue_b) || 0
   inc = 0.0005
   if note == 6 #&& tick % 4 == 0
     change = val == 1 ? inc : -1 * inc
@@ -118,13 +155,29 @@ live_loop :cue_b_loop do
 
 
     set(:cue_b, new_total)
-    ##| if one_in(10)
-    ##|   cue_position(get(:cue_b), '#b')
-    ##| end
-
   end
 end
 
+live_loop :cue_point_a_loop do
+  use_real_time
+  button_num, val = sync  "/midi:dj2go2:#{channel}:5/note_on"
+
+  cue_points = get(:cue_points_a)
+  cue_point = cue_points[button_num-1]
+
+  set(:cue_a, cue_point)
+end
+
+
+live_loop :cue_point_b_loop do
+  use_real_time
+  button_num, val = sync  "/midi:dj2go2:#{channel}:6/note_on"
+
+  cue_points = get(:cue_points_b)
+  cue_point = cue_points[button_num]
+
+  set(:cue_b, cue_point)
+end
 
 #
 # VIS -- update visualization
@@ -164,7 +217,7 @@ end
 
 live_loop :rate_slider_a do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/1/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:1/control_change"
 
   if note == 9
     normed_val = 1 - 2*val/127.0
@@ -175,7 +228,7 @@ end
 
 live_loop :rate_slider_b do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/2/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:2/control_change"
 
   if note == 9
     normed_val = 1 - 2*val/127.0
@@ -191,7 +244,7 @@ end
 
 live_loop :length_knob_a_coarse do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/16/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:16/control_change"
 
   if note == 10
     normed_val = val/127.0
@@ -201,7 +254,7 @@ end
 
 live_loop :length_knob_a_fine do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/1/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:1/control_change"
 
   if note == 22
     normed_val = val/127.0
@@ -211,9 +264,9 @@ end
 
 live_loop :length_knob_b_coarse do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/16/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:16/control_change"
 
-  if note == 10
+  if note == 12
     normed_val = val/127.0
     set(:length_b_coarse, normed_val)
   end
@@ -221,7 +274,7 @@ end
 
 live_loop :length_knob_b_fine do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/2/control_change"
+  note, val = sync "/midi:dj2go2:#{channel}:2/control_change"
 
   if note == 22
     normed_val = val/127.0
@@ -236,7 +289,7 @@ end
 
 live_loop :clipboard_a do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/1/note_on"
+  note, val = sync "/midi:dj2go2:#{channel}:16/note_on"
 
   if note == 2
     str = "sample '#{get(:ss_collection_a)}', '#{get(:ss_sample_a)}',
@@ -250,9 +303,9 @@ end
 
 live_loop :clipboard_b do
   use_real_time
-  note, val = sync "/midi/dj2go2/#{channel}/2/note_on"
+  note, val = sync "/midi:dj2go2:#{channel}:16/note_on"
 
-  if note == 2
+  if note == 3
     str = "sample '#{get(:ss_collection_b)}', '#{get(:ss_sample_b)}',
         rate: #{get(:ss_rate_b)},
         start: #{get(:start_b)},
@@ -271,11 +324,9 @@ end
 # PLAY/PAUSE BUTTON -- on when sample plays
 #
 
-
-
 live_loop :ppa do
   use_real_time
-  note, val = sync("/midi/dj2go2/#{channel}/1/note_on")
+  note, val = sync("/midi:dj2go2:#{channel}:1/note_on")
 
   if note == 0
     now_playing = !get(:playing_a)
@@ -287,43 +338,23 @@ end
 
 live_loop :ppb do
   use_real_time
-  note, val = sync("/midi/dj2go2/#{channel}/2/note_on")
+  note, val = sync("/midi:dj2go2:#{channel}:2/note_on")
 
   if note == 0
     now_playing = !get(:playing_b)
     set(:playing_b, !get(:playing_b))
     new_midi_state = now_playing ? 1 : 0
-    midi_note_on 0, new_midi_state, channel: 1
+    midi_note_on 0, new_midi_state, channel: 2
   end
 end
 
-#midi_note_on 1, 2, channel: 5
-
-#midi_note_on 1,0, channel: 1
-
-#
-# INITIALIZE
-#
-
-defonce :initialized, override: true do
-  set(:playing_a, false)
-  set(:cue_a, 0)
-  set(:rate_a, 1)
-  set(:rate_b, 1)
-                           set(:playing_a, false)
-
-  # turn off the lights
-  midi_note_on 0,0, channel: 1
-  midi_note_on 1,0, channel: 1
-  midi_note_on 2,0, channel: 1
-end
-
-initialized
 
 
 #
 # FEATURES:
 #
+
+
 
 # sync button guesses rate change to the closest BPM based on length
 
