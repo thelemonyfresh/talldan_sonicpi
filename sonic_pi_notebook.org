@@ -7020,3 +7020,31 @@ a triumphant triumverate of minds
 
 
 #+END_SRC
+** <2020-07-10 Fri> sonic pi idioms
+
+#+BEGIN_SRC ruby
+  # if knit(true, 4, false, 4)[look]
+  # if knit(true, 1, false, 1)[look]
+
+  # if look % 8 == 0
+
+#+END_SRC
+** <2020-07-14 Tue> potentially useful methods
+#+BEGIN_SRC
+
+
+define :relative_level do |source_count|
+  1/(0.5*Math.log(source_count) + 1)
+end
+
+define :spread_to_pattern do |sprd, step_length = 1|
+  sprd.to_a.inject([]) { |acc, bool|
+    if bool
+      acc << acc.length * step_length
+    else
+      acc << nil
+    end
+    acc
+  }.compact
+end
+#+END_SRC
